@@ -1,16 +1,11 @@
-U-TOE: Universal TinyML On-board Evaluation Toolkit for Low-Power IoT
+RIOT-ML: Toolkit for Over-the-Air Secure Updates and Performance Evaluation of TinyML Models
 =====================
-If you cite this work please use the PEMWN 2023 reference: 
-```
-Z. Huang, K. Zandberg, K. Schleiser, E. Baccelli. U-TOE: Universal TinyML On-board Evaluation Toolkit for Low-Power IoT. In Proc. of 12th IFIP/IEEE PEMWN, Sept. 2023. 
-```
-For more information on this work, please consult the preprint on [arXiv.org](https://arxiv.org/abs/2306.14574)
 # Get Source Code
 
 It is important to clone the submodules along, with `--recursive` option.
 
 ```
-git clone --recursive git@github.com:zhaolanhuang/U-TOE.git
+git clone --recursive git@github.com:zhaolanhuang/RIOT-ML.git
 ```
 
 Or open the git shell after clone, and type the following command.
