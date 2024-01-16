@@ -99,7 +99,7 @@ static mtd_dev_t *dev = &_dev.base;
 
 #endif
 
-int mlmodel_param_update_values(mlmodel_param_t *parameter, size_t num_values, size_t offset, uint8_t *values) {
+int mlmodel_param_update_values(mlmodel_param_t *parameter, size_t num_values, size_t offset, const uint8_t *values) {
     if (num_values + offset > parameter->num_bytes) return -1;
 
 #ifdef CONFIG_PARAMS_PERSISTENT_ON_FLASH

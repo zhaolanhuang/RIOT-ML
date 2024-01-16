@@ -136,6 +136,7 @@ int main(void)
     per_ops_eval();
 #elif (UTOE_GRANULARITY==0)
     mlmodel_init(model_ptr);
+    mlmodel_set_global_model(model_ptr);
 
     per_model_eval();
 #endif

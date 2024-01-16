@@ -6,6 +6,11 @@ APPLICATION = U-TOE
 # WERROR ?= 0
 # DEVELHELP ?= 1
 
+CFLAGS += -fstack-usage
+CFLAGS += -fcallgraph-info
+CFLAGS += -fdump-rtl-expand
+CFLAGS += -fdump-tree-optimized
+
 EXTERNAL_PKG_DIRS += models
 
 USEPKG += default 

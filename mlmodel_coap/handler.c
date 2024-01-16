@@ -11,7 +11,10 @@
 #include <string.h>
 
 #include "net/nanocoap.h"
+#include "suit/transport/coap.h"
+#include "net/sock/util.h"
 #include "kernel_defines.h"
+#include "log.h"
 #include "mlmci.h"
 
 extern mlmodel_t *model_ptr;
@@ -85,19 +88,36 @@ static ssize_t _model_run_eval_handler(coap_pkt_t *pkt, uint8_t *buf, size_t len
             COAP_FORMAT_TEXT, name, strlen(name));
 }
 NANOCOAP_RESOURCE(model_run_eval) { 
-    .path= "/model/run", .methods = COAP_POST, .handler = _model_run_eval_handler
+    .path= "/model/run_eval", .methods = COAP_POST, .handler = _model_run_eval_handler
 };
 
+extern void param_update_worker_trigger(const char *url, size_t len);
 static ssize_t _model_params_update_handler(coap_pkt_t *pkt, uint8_t *buf, size_t len,
                                    coap_request_ctx_t *context)
 {
     (void)context;
-    const char* name = mlmodel_get_name(model_ptr);
-    return coap_reply_simple(pkt, COAP_CODE_205, buf, len,
-            COAP_FORMAT_TEXT, name, strlen(name));
+    unsigned code;
+    size_t payload_len = pkt->payload_len;
+    if (payload_len) {
+        if (payload_len >= CONFIG_SOCK_URLPATH_MAXLEN) {
+            code = COAP_CODE_REQUEST_ENTITY_TOO_LARGE;
+        }
+        else {
+            code = COAP_CODE_CREATED;
+            LOG_INFO("suit params update: received URL: \"%s\"\n", (char *)pkt->payload);
+            param_update_worker_trigger((char *)pkt->payload, payload_len);
+        }
+    }
+    else {
+        code = COAP_CODE_REQUEST_ENTITY_INCOMPLETE;
+    }
+
+    return coap_reply_simple(pkt, code, buf, len,
+                             COAP_FORMAT_NONE, NULL, 0);
+
 }
 NANOCOAP_RESOURCE(model_params_update) { 
-    .path= "/model/params/update", .methods = COAP_POST, .handler = _model_params_update_handler
+    .path= "/model/params/update", .methods = COAP_POST | COAP_PUT, .handler = _model_params_update_handler
 };
 
 

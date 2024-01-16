@@ -1,1 +1,2 @@
 USEMODULE += nanocoap_resources
+USEMODULE += mlmci

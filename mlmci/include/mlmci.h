@@ -119,7 +119,7 @@ mlmodel_param_t *mlmodel_opt_get_param(const mlmodel_operator_t *operator, size_
 /* Parameter Interface */
 size_t mlmodel_param_get_values_bytes(const mlmodel_param_t *parameter);
 mlmodel_param_permission_t mlmodel_param_get_permission(const mlmodel_param_t *parameter);
-int mlmodel_param_update_values(mlmodel_param_t *parameter, size_t num_values, size_t offset, uint8_t *values);
+int mlmodel_param_update_values(mlmodel_param_t *parameter, size_t num_values, size_t offset, const uint8_t *values);
 
 /* IO Variable Interface */
 size_t mlmodel_iovar_get_values_bytes(const mlmodel_iovar_t *var);
@@ -138,6 +138,11 @@ static inline int mlmodel_inference(mlmodel_t *model) {
 static inline int mlmodel_backward_pass(mlmodel_t *model, mlmodel_iovar_t input_gradients[], mlmodel_iovar_t output_gradients[]) {
     return model->driver->backward_pass(model, input_gradients, output_gradients);
 }
+
+/* Global Model Interface */
+void mlmodel_set_global_model(mlmodel_t *model);
+mlmodel_t *mlmodel_get_global_model(void);
+const mlmodel_t *mlmodel_get_global_model_const(void);
 
 
 
