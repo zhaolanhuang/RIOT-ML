@@ -1,3 +1,4 @@
 # Use an immediate variable to evaluate `MAKEFILE_LIST` now
-# USEMODULE_INCLUDES_external_module := $(LAST_MAKEFILEDIR)/include
-# USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_external_module)
+# Mk BUG: uncomment following lines leads to mlmci.h not found
+USEMODULE_INCLUDES_mlmodel_coap := $(LAST_MAKEFILEDIR)/include
+# USEMODULE_INCLUDES += $(USEMODULE_INCLUDES_mlmodel_coap)
