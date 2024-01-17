@@ -118,15 +118,11 @@ void per_ops_eval(void)
 extern int suit_init(void);
 #endif
 
-int test_model_params_update(void) {
-    static int8_t buf[10] = {1,2,3,4, 5, 6,7,8,9,10};
-    mlmodel_param_update_values(&(model_ptr->params[0]), sizeof(buf), 0, (uint8_t*) buf);
-    return 0; 
-}
 extern void coap_server_init();
 int main(void)
 {
-    xtimer_init();
+    /* comment-out - causing no icmp echo */
+    // xtimer_init();
 
 #ifdef USE_SUIT
     suit_init();
@@ -140,23 +136,11 @@ int main(void)
 
     per_model_eval();
 #endif
-    printf("Before update params[0]: \n");
-    for(int i = 0; i < 20; i++) {
-        printf("%d ", (int8_t)(model_ptr->params[0].values[i]));
-    }
-    printf("\n");
-    test_model_params_update();
-
-    printf("After update params[0]: \n");
-    for(int i = 0; i < 20; i++) {
-        printf("%d ", (int8_t)(model_ptr->params[0].values[i]));
-    }
-    printf("\n");
 
     printf("{\"IPv6 addresses\": [\"");
     netifs_print_ipv6("\", \"");
     puts("\"]}");
-
+    
     coap_server_init();
     return 0;
 }
