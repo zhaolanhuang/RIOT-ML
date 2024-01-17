@@ -10,6 +10,7 @@ from utils import generate_model_io_vars_header, extract_io_vars_from_module, _s
 from microtvm_transport import UTOETransport
 import tvm
 from functools import reduce
+from mlmci_utils import generate_mlmci_files
 
 LOG_DIR = './logs'
 
@@ -19,13 +20,7 @@ def evaluate_per_model(model_path, board='stm32f746g-disco', trials_num=10, use_
     print("Load Model and Code Gen...")
     mod, params = load_model(model_path, shape_dict)
     moudle = compile_per_model_eval(mod, params, board, './models/default/default.tar')
-    input_vars, output_vars = extract_io_vars_from_module(moudle)
-    input_vars = filter(lambda x: str(x['name']) not in params, input_vars)
-    input_vars = list(input_vars)
-    # generate_model_io_vars_header(input_vars=input_vars, output_vars=output_vars)
-    generate_model_io_vars_files(input_vars, output_vars)
-    generate_model_params_files(params)
-    generate_model_binding_files(params, input_vars, output_vars)
+    generate_mlmci_files(moudle, params)
     print("Load Model and Code Gen...done")
 
     env = {'BOARD': board, 'UTOE_TRIAL_NUM': str(trials_num), 'UTOE_RANDOM_SEED': str(random_seed)}
