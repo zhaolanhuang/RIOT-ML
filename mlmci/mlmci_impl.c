@@ -50,7 +50,7 @@ mlmodel_param_t *mlmodel_get_parameter(const mlmodel_t *model, size_t location) 
 
 mlmodel_param_t *mlmodel_get_parameter_by_name(const mlmodel_t *model, const char name[]) {
     for(size_t i = 0; i < model->num_params; i++) {
-        if(strcmp(model->params[i].name, name)) return &(model->params[i]);
+        if(0 == strcmp(model->params[i].name, name)) return &(model->params[i]);
     }
     return NULL;
 }
