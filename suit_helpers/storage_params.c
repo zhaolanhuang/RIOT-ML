@@ -41,7 +41,7 @@ static inline mlmodel_param_t *_get_active_params(
     return ram->active_params;
 }
 
-static bool _get_params_by_string(const suit_storage_model_params_t *ram, const char *location, mlmodel_param_t *val)
+static bool _get_params_by_string(const suit_storage_model_params_t *ram, const char *location, mlmodel_param_t **val)
 {
     /* Matching on .ram.### */
     static const char prefix[] = CONFIG_SUIT_STORAGE_MODEL_PARAMS_LOCATION_PREFIX;
@@ -56,16 +56,16 @@ static bool _get_params_by_string(const suit_storage_model_params_t *ram, const 
         if (fmt_is_number(location)) {
             /* grab the number */
             uint32_t index = scn_u32_dec(location, 5);
-            val = mlmodel_get_parameter(ram->current_model, index);
+            *val = mlmodel_get_parameter(ram->current_model, index);
             /* Number must be smaller than the number of regions */
-            if (val != NULL) {
+            if (*val != NULL) {
                 return true;
             }
         } 
         /* Find Params by name */
         else {
-            val = mlmodel_get_parameter_by_name(ram->current_model, location);
-            if (val != NULL) {
+            *val = mlmodel_get_parameter_by_name(ram->current_model, location);
+            if (*val != NULL) {
                 return true;
             }
         }
@@ -74,6 +74,7 @@ static bool _get_params_by_string(const suit_storage_model_params_t *ram, const 
     return false;
 }
 
+/* will be called before main func*/
 static int _ram_init(suit_storage_t *storage)
 {
 
@@ -156,9 +157,10 @@ static bool _ram_has_location(const suit_storage_t *storage,
                               const char *location)
 {
     mlmodel_param_t *val = NULL;
-    const suit_storage_model_params_t *ram = _get_ram_const(storage);
+    suit_storage_model_params_t *ram = _get_ram(storage);
+    ram->current_model = mlmodel_get_global_model();
 
-    return _get_params_by_string(ram, location, val);
+    return _get_params_by_string(ram, location, &val);
 }
 
 static int _ram_set_active_location(suit_storage_t *storage,
@@ -167,7 +169,7 @@ static int _ram_set_active_location(suit_storage_t *storage,
     suit_storage_model_params_t *ram = _get_ram(storage);
     mlmodel_param_t *region = NULL;
 
-    if (!_get_params_by_string(ram, location, region)) {
+    if (!_get_params_by_string(ram, location, &region)) {
         return -1;
     }
 
