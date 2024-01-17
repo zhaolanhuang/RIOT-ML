@@ -4,6 +4,7 @@ USEMODULE += libcose_crypt_c25519
 USEMODULE += nanocoap_sock
 USEMODULE += sock_util
 USEMODULE += nanocoap_resources
+USEMODULE += nanocoap_server
 
 # Include packages that pull up and auto-init the link layer.
 # NOTE: 6LoWPAN will be included if IEEE802.15.4 devices are present

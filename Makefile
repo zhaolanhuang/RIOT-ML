@@ -40,16 +40,17 @@ EXTERNAL_MODULE_DIRS += $(CURDIR)
 USE_SUIT ?= 0
 SUIT_COAP_FSROOT ?= $(CURDIR)/coaproot
 ifeq ($(USE_SUIT), 1)
-	include $(CURDIR)/suit.mk
-	DIRS += suit_helpers
+	# FEATURES_PROVIDED += riotboot
 	USEMODULE += suit_helpers
+	include $(CURDIR)/suit.mk
+	# DIRS += suit_helpers
 	CFLAGS += -DUSE_SUIT
 else
 	include $(RIOTBASE)/Makefile.include
 endif
 
 CFLAGS += -Wno-strict-prototypes 
-CFLAGS += -Wno-missing-include-dirs
+# CFLAGS += -Wno-missing-include-dirs
 
 IOTLAB_ARCHI_openmote-b = openmoteb
 include iotlab.site.mk

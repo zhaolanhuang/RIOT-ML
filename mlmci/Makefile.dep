@@ -1,4 +1,4 @@
-USEMODULE += mtd
-USEMODULE += mtd_flashpage
-USEMODULE += mtd_write_page
+# USEMODULE += mtd
+# USEMODULE += mtd_flashpage
+# USEMODULE += mtd_write_page
 
