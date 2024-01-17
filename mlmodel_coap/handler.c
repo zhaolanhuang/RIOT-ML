@@ -51,7 +51,7 @@ static ssize_t _model_eval_result_handler(coap_pkt_t *pkt, uint8_t *buf, size_t 
     return coap_reply_simple(pkt, COAP_CODE_205, buf, len,
             COAP_FORMAT_TEXT, name, strlen(name));
 }
-NANOCOAP_RESOURCE(model__eval_result) { 
+NANOCOAP_RESOURCE(model_eval_result) { 
     .path= "/model/eval_result", .methods = COAP_GET, .handler = _model_eval_result_handler
 };
 
