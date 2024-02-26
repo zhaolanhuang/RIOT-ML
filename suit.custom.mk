@@ -29,3 +29,9 @@ ifeq ($(BOARD),native)
   SUIT_MANIFEST_PAYLOADS ?= $(SUIT_NATIVE_PAYLOAD_BIN)
   SUIT_MANIFEST_SLOTFILES ?= $(SUIT_NATIVE_PAYLOAD_BIN):0:$(SUIT_FW_STORAGE)
 endif
+
+suit/notify/model_params: | $(filter suit/publish, $(MAKECMDGOALS))
+	$(Q)test -n "$(SUIT_CLIENT)" || { echo "error: SUIT_CLIENT unset!"; false; }
+	aiocoap-client -m POST "coap://$(SUIT_CLIENT)/model/params/update" \
+		--payload "$(SUIT_COAP_ROOT)/$(SUIT_NOTIFY_MANIFEST)" && \
+		echo "Triggered $(SUIT_CLIENT) to update."

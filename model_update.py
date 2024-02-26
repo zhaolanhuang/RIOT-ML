@@ -16,6 +16,7 @@ MAKE_SUIT_KEYGEN = 'suit/genkey'
 MAKE_SUIT_MANIFEST = 'suit/manifest'
 MAKE_SUIT_PUBLISH = 'suit/publish'
 MAKE_SUIT_NOTIFY = 'suit/notify'
+MAKE_SUIT_NOTIFY_UPDATE_PARAMS = 'suit/notify/model_params'
 MAKE_RIOTBOOT = 'riotboot'
 
 
@@ -117,7 +118,7 @@ def partial_update(client_ip, coap_server_ip,
     make_ctrl = get_local_controller(env)
     make_ctrl.make_run((MAKE_SUIT_MANIFEST,))
     make_ctrl.make_run((MAKE_SUIT_PUBLISH,))
-    make_ctrl.make_run((MAKE_SUIT_NOTIFY,))
+    make_ctrl.make_run((MAKE_SUIT_NOTIFY_UPDATE_PARAMS,))
         
 
 
@@ -130,5 +131,5 @@ if __name__ == "__main__":
     # preprovision_suit_able_firmware(conn, model_path, BOARD)
     
     # full_update('[2001:db8::2]','[2001:db8::1]', model_path, BOARD)
-    dummy_params = {'_param_1': np.array([1, 3, 5])}
+    dummy_params = {'_param_1': np.array(list(range(150)), dtype=np.byte)}
     partial_update('[fe80::477:61ff:fe08:f198%tap0]','[fe80::477:61ff:fe08:f197]', dummy_params, BOARD)
