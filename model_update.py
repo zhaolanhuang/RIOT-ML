@@ -1,4 +1,4 @@
-from connector import get_local_controller
+from connector import get_local_controller, get_fit_iotlab_controller
 from riotctrl.ctrl import RIOTCtrl
 from model_converter import load_model, compile_per_model_eval
 from mlmci_utils import generate_mlmci_files
@@ -22,7 +22,7 @@ MAKE_RIOTBOOT = 'riotboot'
 
 def build_suit_firmware_payload(board):
     env = {'BOARD': board, 'UTOE_GRANULARITY' : '0', 
-           'USE_SUIT': '1', 'RIOTBOOT_SKIP_COMPILE': '1'}
+           'USE_SUIT': '1', 'RIOTBOOT_SKIP_COMPILE': '0'}
     make_ctrl = get_local_controller(env)
     make_ctrl.make_run((MAKE_RIOTBOOT,))
 
@@ -45,8 +45,9 @@ def generate_model_c_code(model_file_path, board, output_path, shape_dict=None):
     moudle = compile_per_model_eval(mod, params, board, output_path)
     generate_mlmci_files(moudle, params)
 
-def compile_suit_able_firmware(board):
-    env = {'BOARD': board, 'UTOE_GRANULARITY' : '0', 'USE_SUIT': '1'}
+def compile_suit_able_firmware(board, env=None):
+    if env is None:
+        env = {'BOARD': board, 'UTOE_GRANULARITY' : '0', 'USE_SUIT': '1'}
     make_ctrl = get_local_controller(env)
     make_ctrl.make_run(('-j8',))
 
@@ -55,7 +56,7 @@ def preprovision_suit_able_firmware(connector: RIOTCtrl, model_file_path, board,
     generate_model_c_code(model_file_path, board, MODEL_C_LIB_PATH, shape_dict)
     print("Load Model and Code Gen...done")
     print("Compile Firmware...")
-    compile_suit_able_firmware(board)
+    compile_suit_able_firmware(board, connector.env)
     print("Compile Firmware...done")
     print("Flash to Device...")
     connector.make_run((MAKE_FLASH_ONLY,))
@@ -81,6 +82,9 @@ def notify_full_update(client_ip, coap_server_ip):
 def full_update(client_ip, coap_server_ip, model_file_path, board, shape_dict=None):
     os.environ['BOARD'] = board
     os.environ['APP_VER'] = str(int(time.time()))
+    os.environ['SUIT_CLIENT'] = client_ip
+    os.environ['SUIT_COAP_SERVER'] = coap_server_ip
+
     print("Load Model and Code Gen...")
     generate_model_c_code(model_file_path, board, MODEL_C_LIB_PATH, shape_dict)
     print("Load Model and Code Gen...done")
@@ -123,13 +127,19 @@ def partial_update(client_ip, coap_server_ip,
 
 
 if __name__ == "__main__":
-    BOARD = 'native'
+    BOARD = 'nrf52840dk'
     model_path = './model_zoo/mnist_0.983_quantized.tflite'
+    # env = {'BOARD': BOARD, 'UTOE_GRANULARITY' : '0', 
+    #        'USE_SUIT': '1', }
+    # conn = get_local_controller(env)
     env = {'BOARD': BOARD, 'UTOE_GRANULARITY' : '0', 
-           'USE_SUIT': '1', }
-    conn = get_local_controller(env)
+           'USE_SUIT': '1', 'DEFAULT_CHANNEL': '26', 'USE_ETHOS': '0'}
+    os.environ['USE_ETHOS'] = '0'
+    os.environ['DEFAULT_CHANNEL'] = '26'
+    conn = get_fit_iotlab_controller(env, iotlab_node='nrf52840dk-10.saclay.iot-lab.info')
+
     # preprovision_suit_able_firmware(conn, model_path, BOARD)
     
-    # full_update('[2001:db8::2]','[2001:db8::1]', model_path, BOARD)
+    # full_update('[2001:db8::64fa:5ffe:7879:4ad9]','[2001:db8::1]', model_path, BOARD)
     dummy_params = {'_param_1': np.array(list(range(150)), dtype=np.byte)}
-    partial_update('[fe80::477:61ff:fe08:f198%tap0]','[fe80::477:61ff:fe08:f197]', dummy_params, BOARD)
+    partial_update('[2001:db8::64fa:5ffe:7879:4ad9]','[2001:db8::1]', dummy_params, BOARD)
