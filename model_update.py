@@ -6,6 +6,7 @@ import os
 import time
 import numpy as np
 import tempfile
+import argparse
 
 MODEL_C_LIB_PATH = './models/default/default.tar'
 COAP_SERVER_ROOT = './coaproot'
@@ -127,6 +128,19 @@ def partial_update(client_ip, coap_server_ip,
 
 
 if __name__ == "__main__":
+    # model_update.py --preprovision/--full/--partial --board --iotlab-node --client --server model_artifact
+    # model_artifact: model file when preprovision or full update, 
+    #                 json dict file(params name -> values list) when partial update
+    # iotlab-node: only use for preprovision to iotlab
+    # client, server: ipv6 addresses only use in full and partial update
+    # USE_ETHOS and DEFAULT_CHANNEL should be pre-defined outside the python file
+    # examples:
+    # USE_ETHOS=0 DEFAULT_CHANNEL=26 python model_update.py --preprovision --board nrf52840dk --iotlab-node nrf52840dk-10.saclay.iot-lab.info ./model_zoo/mnist_0.983_quantized.tflite
+    # USE_ETHOS=1 python model_update.py --full --board nrf52840dk --client [2001:db8::2] --server [2001:db8::1] ./model_zoo/mnist_0.983_quantized.tflite
+    # python model_update.py --partial --board nrf52840dk --client [2001:db8::2] --server [2001:db8::1] ./params.json
+
+
+
     BOARD = 'nrf52840dk'
     model_path = './model_zoo/mnist_0.983_quantized.tflite'
     # env = {'BOARD': BOARD, 'UTOE_GRANULARITY' : '0', 
