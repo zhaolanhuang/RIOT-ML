@@ -7,6 +7,7 @@ import time
 import numpy as np
 import tempfile
 import argparse
+import json
 
 MODEL_C_LIB_PATH = './models/default/default.tar'
 COAP_SERVER_ROOT = './coaproot'
@@ -124,6 +125,13 @@ def partial_update(client_ip, coap_server_ip,
     make_ctrl.make_run((MAKE_SUIT_MANIFEST,))
     make_ctrl.make_run((MAKE_SUIT_PUBLISH,))
     make_ctrl.make_run((MAKE_SUIT_NOTIFY_UPDATE_PARAMS,))
+
+#Input: Json file with: param names -> value lists
+def read_json_params(file_path):
+    with open(file_path, 'rb') as f:
+        params_dict = json.load(f)
+    return {k: np.array(v, dtype=np.byte) for k,v in params_dict.items()}
+
         
 
 
@@ -139,21 +147,63 @@ if __name__ == "__main__":
     # USE_ETHOS=1 python model_update.py --full --board nrf52840dk --client [2001:db8::2] --server [2001:db8::1] ./model_zoo/mnist_0.983_quantized.tflite
     # python model_update.py --partial --board nrf52840dk --client [2001:db8::2] --server [2001:db8::1] ./params.json
 
-
-
-    BOARD = 'nrf52840dk'
-    model_path = './model_zoo/mnist_0.983_quantized.tflite'
-    # env = {'BOARD': BOARD, 'UTOE_GRANULARITY' : '0', 
-    #        'USE_SUIT': '1', }
-    # conn = get_local_controller(env)
-    env = {'BOARD': BOARD, 'UTOE_GRANULARITY' : '0', 
-           'USE_SUIT': '1', 'DEFAULT_CHANNEL': '26', 'USE_ETHOS': '0'}
-    os.environ['USE_ETHOS'] = '0'
-    os.environ['DEFAULT_CHANNEL'] = '26'
-    conn = get_fit_iotlab_controller(env, iotlab_node='nrf52840dk-10.saclay.iot-lab.info')
-
-    # preprovision_suit_able_firmware(conn, model_path, BOARD)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("model_artifact", help="path to model file for preprovision or full update;"
+                        "path to json file with parameter dict (param name -> values in list) for partial update.",
+                        type=str)
+    func_group = parser.add_mutually_exclusive_group()
+    func_group.add_argument("--preprovision", 
+                            help="Preprovision device with SUIT-able firmware.",
+                            action="store_true")
+    func_group.add_argument("--full-update", 
+                            help="Run full update of model.",
+                            action="store_true")
+    func_group.add_argument("--partial-update", 
+                            help="Run partial update of model.",
+                            action="store_true")
+    parser.add_argument("--board", help="IoT board name", default="nrf52840dk",
+                        type=str)
+    parser.add_argument("--iotlab-node", help="remote node url. Only used when preprovisioning firmware to IoT lab node",
+                        default=None)
+    parser.add_argument("--client", help="IPv6 address of client received model update",
+                        type=str)
+    parser.add_argument("--server", help="IPv6 address of CoAP server as SUIT-artifacts repository.",
+                        type=str)
+    args = parser.parse_args()
     
-    # full_update('[2001:db8::64fa:5ffe:7879:4ad9]','[2001:db8::1]', model_path, BOARD)
-    dummy_params = {'_param_1': np.array(list(range(150)), dtype=np.byte)}
-    partial_update('[2001:db8::64fa:5ffe:7879:4ad9]','[2001:db8::1]', dummy_params, BOARD)
+    artifact_path = args.model_artifact
+    BOARD = args.board
+    env = {'BOARD': BOARD, 'UTOE_GRANULARITY' : '0', 'USE_SUIT': '1'}
+    if args.iotlab_node is not None:
+        conn = get_fit_iotlab_controller(env, iotlab_node=args.iotlab_node)
+    else:
+        conn = get_local_controller(env)
+    
+    if args.preprovision:
+        preprovision_suit_able_firmware(conn, artifact_path, BOARD)
+    elif args.full_update:
+        full_update(args.client, args.server, artifact_path, BOARD)
+    elif args.partial_update:
+        partial_update(args.client, args.server, 
+                       read_json_params(artifact_path), BOARD)
+    else:
+        print("Unsupport Operation!")
+
+    DEBUG = 0
+    if DEBUG == 1:
+
+        BOARD = 'nrf52840dk'
+        model_path = './model_zoo/mnist_0.983_quantized.tflite'
+        # env = {'BOARD': BOARD, 'UTOE_GRANULARITY' : '0', 
+        #        'USE_SUIT': '1', }
+        # conn = get_local_controller(env)
+        env = {'BOARD': BOARD, 'UTOE_GRANULARITY' : '0', 'USE_SUIT': '1'}
+        os.environ['USE_ETHOS'] = '0'
+        os.environ['DEFAULT_CHANNEL'] = '26'
+        conn = get_fit_iotlab_controller(env, iotlab_node='nrf52840dk-10.saclay.iot-lab.info')
+
+        # preprovision_suit_able_firmware(conn, model_path, BOARD)
+        
+        # full_update('[2001:db8::64fa:5ffe:7879:4ad9]','[2001:db8::1]', model_path, BOARD)
+        dummy_params = {'_param_1': np.array(list(range(150)), dtype=np.byte)}
+        partial_update('[2001:db8::64fa:5ffe:7879:4ad9]','[2001:db8::1]', dummy_params, BOARD)
