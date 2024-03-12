@@ -72,7 +72,12 @@ iotlab-auth --add-ssh-key
 # Usage
 ! FOR PYTORCH USER ! Please first [transform your model in *TorchScript* representation](#how-to-torchscript-your-model) !
 
-Before running the evaluation, please get your model files ready from ML frameworks (TFLite, PyTorch etc.). You can find some model file examples in `model_zoo` folder.  
+Before running the evaluation, please get your model files ready from ML frameworks (TFLite, PyTorch etc.). You can find some model file examples in `model_zoo` folder.
+
+## Model Update
+Please refer to [Running Model Update on IoT Boards](https://github.com/zhaolanhuang/RIOT-ML/blob/main/examples/README.model_update.md).
+
+## CLI of U-TOE
 
 U-TOE provides a command line interface (CLI) entry `u-toe.py`, see below:
 
