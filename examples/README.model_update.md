@@ -17,7 +17,7 @@ Keep the server running in the terminal.
 The following command executes full model update on RIOT-ML node:
 
 ```
-USE_ETHOS=0 python model_update.py --full --board nrf52840dk --client <ip of RIOT-ML node> --server <ip of local computer> <path to the model file>
+USE_ETHOS=0 python model_update.py --full-update --board <board name> --client <ip of RIOT-ML node> --server <ip of local computer> <path to the model file>
 ```
 
 For example,
@@ -30,7 +30,7 @@ USE_ETHOS=0 python model_update.py --full-update --board nrf52840dk --client [20
 The following command executes partial model update on RIOT-ML node:
 
 ```
-USE_ETHOS=0 python model_update.py --full --board nrf52840dk --client <ip of RIOT-ML node> --server <ip of local computer> <path to the model parameter file in JSON format>
+USE_ETHOS=0 python model_update.py --partial-update --board <board name> --client <ip of RIOT-ML node> --server <ip of local computer> <path to the model parameter file in JSON format>
 ```
 
 For example,
