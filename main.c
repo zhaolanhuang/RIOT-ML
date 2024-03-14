@@ -26,8 +26,10 @@
 #include <tvm/runtime/crt/logging.h>
 #include "stdio_base.h"
 #include "mlmci.h"
-#include "net/nanocoap_sock.h"
 
+#ifndef UTOE_ONLY
+#include "net/nanocoap_sock.h"
+#endif
 
 #ifndef UTOE_RANDOM_SEED
 #define UTOE_RANDOM_SEED 42
@@ -67,8 +69,10 @@ void per_model_eval(void)
 {       
     // #include "model_io_vars.h"
     (void) printf("U-TOE Per-Model Evaluation \n");
-    // (void) printf("Press any key to start >\n");
-    // (void) getchar();
+#ifdef UTOE_ONLY
+    (void) printf("Press any key to start >\n");
+    (void) getchar();
+#endif
 
     random_init(UTOE_RANDOM_SEED);
     uint32_t start, end;
@@ -118,7 +122,11 @@ void per_ops_eval(void)
 extern int suit_init(void);
 #endif
 
+#ifndef UTOE_ONLY
 extern void coap_server_init();
+#endif
+
+
 int main(void)
 {
     /* comment-out - causing no icmp echo */
@@ -137,10 +145,13 @@ int main(void)
     per_model_eval();
 #endif
 
+#ifndef UTOE_ONLY
+
     printf("{\"IPv6 addresses\": [\"");
     netifs_print_ipv6("\", \"");
     puts("\"]}");
     
     coap_server_init();
+#endif
     return 0;
 }

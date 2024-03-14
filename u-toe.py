@@ -1,5 +1,6 @@
 from evaluate import evaluate_per_model, evaluate_per_operator, memory_analysis
 import argparse
+import os
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -21,6 +22,7 @@ if __name__ == '__main__':
     parser.add_argument("--random-seed", default=42, type=int, help="default: 42")
     parser.add_argument("--trials-num", default=10, type=int, help="defalut: 10")
     parser.add_argument("--input-shape", default=None, type=lambda s: [int(i) for i in s.split(',')], help="specify the input shape, mandatory for pytorch model. format: N,C,W,H default: None")
+    os.environ['UTOE_ONLY'] = '1'
     args = parser.parse_args()
     if args.mem_analysis:
         memory_analysis(args.model_file, args.board, {'input': args.input_shape})
