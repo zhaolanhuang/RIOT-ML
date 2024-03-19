@@ -127,7 +127,7 @@ From another terminal on the host, add a routable address on the host `riot0`
 interface:
 
 ```
-sudo ip address add 2001:db8::1/128 dev riot0
+sudo ip address add 2001:db9::1/128 dev riot0
 ```
 
 ## Provision the wireless device
