@@ -1,5 +1,11 @@
 RIOT-ML: Toolkit for Over-the-Air Secure Updates and Performance Evaluation of TinyML Models
 =====================
+If you cite this work, please use: 
+```
+Zhaolan Huang, Koen Zandberg, Kaspar Schleiser, Emmanuel Baccelli. RIOT-ML: Toolkit for Over-the-Air Secure Updates and Performance Evaluation of TinyML Models. 2024. ⟨hal-04506370⟩
+```
+For more information on this work, please consult the preprint on [Inria HAL](https://inria.hal.science/hal-04506370/)
+
 # Get Source Code
 
 It is important to clone the submodules along, with `--recursive` option.
