@@ -25,9 +25,9 @@ if __name__ == '__main__':
     os.environ['UTOE_ONLY'] = '1'
     args = parser.parse_args()
     if args.mem_analysis:
-        memory_analysis(args.model_file, args.board, {'input': args.input_shape})
+        memory_analysis(args.model_file, args.board, {'input': args.input_shape} if args.input_shape is not None else None)
     elif args.per_ops:
-        evaluate_per_operator(args.model_file, args.board, args.use_iotlab, args.iotlab_node, {'input': args.input_shape})
+        evaluate_per_operator(args.model_file, args.board, args.use_iotlab, args.iotlab_node, {'input': args.input_shape} if args.input_shape is not None else None)
     else:
-        evaluate_per_model(args.model_file, args.board, args.trials_num, args.use_iotlab, args.iotlab_node, args.random_seed, {'input': args.input_shape})
+        evaluate_per_model(args.model_file, args.board, args.trials_num, args.use_iotlab, args.iotlab_node, args.random_seed, {'input': args.input_shape} if args.input_shape is not None else None)
 
