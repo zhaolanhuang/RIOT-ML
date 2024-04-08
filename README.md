@@ -11,7 +11,7 @@ For more information on this work, please consult the preprint on [Inria HAL](ht
 It is important to clone the submodules along, with `--recursive` option.
 
 ```
-git clone --recursive git@github.com:zhaolanhuang/RIOT-ML.git
+git clone --recursive git@github.com:TinyPART/RIOT-ML.git
 ```
 
 Or open the git shell after clone, and type the following command.
