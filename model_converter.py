@@ -9,6 +9,8 @@ from tvm import relay
 import tvm.contrib.utils
 from tvm.micro import export_model_library_format
 from tvm.driver import tvmc
+from tvm.driver.tvmc.frontends import guess_frontend, PyTorchFrontend
+import inspect
 
 RIOT_BOARD_TO_TARGET = {
     'stm32f746g-disco': tvm.target.target.stm32('stm32F7xx'),
@@ -92,5 +94,12 @@ def compile_per_ops_eval(relay_mod, params ,riot_board=None, mlf_path=None, link
     return module
 
 def load_model(model_path: str, shape_dict=None):
-    model = tvmc.load(model_path, shape_dict=shape_dict)
+    frontend = guess_frontend(model_path)
+    if isinstance(frontend, PyTorchFrontend):
+        if 'preserve_pytorch_scopes' in inspect.getfullargspec(relay.frontend.from_pytorch).args:
+            model = tvmc.load(model_path, shape_dict=shape_dict, use_parser_friendly_name=True, preserve_pytorch_scopes=True)
+        else:
+            model = tvmc.load(model_path, shape_dict=shape_dict, use_parser_friendly_name=True)
+    else:
+        model = tvmc.load(model_path, shape_dict=shape_dict)
     return model.mod, model.params
