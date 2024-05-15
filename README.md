@@ -2,7 +2,7 @@ RIOT-ML: Toolkit for Over-the-Air Secure Updates and Performance Evaluation of T
 =====================
 If you cite this work, please use: 
 ```
-Z. Huang, K. Zandberg, K. Schleiser and E. Baccelli, 2024. RIOT-ML: Toolkit for Over-the-Air Secure Updates and Performance Evaluation of TinyML Models. Annals of Telecommunications, to appear.
+Z. Huang, K. Zandberg, K. Schleiser and E. Baccelli. RIOT-ML: Toolkit for Over-the-Air Secure Updates and Performance Evaluation of TinyML Models. Annals of Telecommunications, 2024 (to appear).
 ```
 For more information on this work, please consult the preprint on [Inria HAL](https://inria.hal.science/hal-04506370v1/document)
 
