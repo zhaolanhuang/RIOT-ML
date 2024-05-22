@@ -73,8 +73,9 @@ def compile_per_model_eval(relay_mod, params, riot_board=None, mlf_path=None):
     TARGET = RIOT_BOARD_TO_TARGET.get(riot_board) or tvm.target.target.micro('host')
     with tvm.transform.PassContext(opt_level=3, config={
                                                     "tir.disable_vectorize": True, 
-                                                    "tir.usmp.enable": True
-                                                    }): # what is usmp? -> Enable Unified Static Memory Planning
+                                                    "tir.usmp.enable": True, # what is usmp? -> Enable Unified Static Memory Planning
+                                                    "tir.usmp.algorithm": "hill_climb",
+                                                    }): 
         print(params.keys())
         module = relay.build(relay_mod, target=TARGET, runtime=RUNTIME, params=None, executor=EXECUTOR)
     if mlf_path is not None:
