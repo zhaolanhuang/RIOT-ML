@@ -5,8 +5,8 @@ from tabulate import tabulate
 from datetime import datetime
 from connector import get_local_controller, get_fit_iotlab_controller
 import json
-from model_converter import load_model, compile_per_model_eval, load_from_tflite, compile_per_ops_eval
-from utils import generate_model_io_vars_header, extract_io_vars_from_module, _shape_to_size, generate_model_params_files, generate_model_io_vars_files, generate_model_binding_files
+from model_converter import load_model, compile_per_model_eval, generate_model_c_code, compile_per_ops_eval
+from utils import  _shape_to_size
 from microtvm_transport import UTOETransport
 import tvm
 from functools import reduce
@@ -18,9 +18,9 @@ def evaluate_per_model(model_path, board='stm32f746g-disco', trials_num=10, use_
                        iotlab_node=None, random_seed=42,
                        shape_dict=None):
     print("Load Model and Code Gen...")
-    mod, params = load_model(model_path, shape_dict)
-    moudle = compile_per_model_eval(mod, params, board, './models/default/default.tar')
-    generate_mlmci_files(moudle, params)
+    
+    generate_model_c_code(model_path, board, './models/default/default.tar', shape_dict)
+
     print("Load Model and Code Gen...done")
 
     env = {'BOARD': board, 'UTOE_TRIAL_NUM': str(trials_num), 'UTOE_RANDOM_SEED': str(random_seed)}
