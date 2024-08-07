@@ -11,6 +11,7 @@ from tvm.micro import export_model_library_format
 from tvm.driver import tvmc
 from tvm.driver.tvmc.frontends import guess_frontend, PyTorchFrontend
 import inspect
+from mlmci_utils import generate_mlmci_files
 
 RIOT_BOARD_TO_TARGET = {
     'stm32f746g-disco': tvm.target.target.stm32('stm32F7xx'),
@@ -104,3 +105,8 @@ def load_model(model_path: str, shape_dict=None):
     else:
         model = tvmc.load(model_path, shape_dict=shape_dict)
     return model.mod, model.params
+
+def generate_model_c_code(model_file_path, board, model_output_path, mlmci_output_path="./", shape_dict=None):
+    mod, params = load_model(model_file_path, shape_dict)
+    moudle = compile_per_model_eval(mod, params, board, model_output_path)
+    generate_mlmci_files(moudle, params, mlmci_output_path)

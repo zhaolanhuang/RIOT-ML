@@ -204,7 +204,3 @@ def generate_model_binding_files(
 
     h_file.write("#endif")
     h_file.close()
-
-
-
-

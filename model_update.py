@@ -1,7 +1,6 @@
 from connector import get_local_controller, get_fit_iotlab_controller
 from riotctrl.ctrl import RIOTCtrl
-from model_converter import load_model, compile_per_model_eval
-from mlmci_utils import generate_mlmci_files
+from model_converter import generate_model_c_code
 import os
 import time
 import numpy as np
@@ -41,11 +40,6 @@ def build_suit_parmas_payload(params_json):
 
 def suit_genkey():
     pass
-
-def generate_model_c_code(model_file_path, board, output_path, shape_dict=None):
-    mod, params = load_model(model_file_path, shape_dict)
-    moudle = compile_per_model_eval(mod, params, board, output_path)
-    generate_mlmci_files(moudle, params)
 
 def compile_suit_able_firmware(board, env=None):
     if env is None:
