@@ -6,6 +6,7 @@ Huang, Z., Zandberg, K., Schleiser, K., & Baccelli, E. (2024). RIOT-ML: toolkit 
 ```
 For more information on this work, read this [publication](https://link.springer.com/content/pdf/10.1007/s12243-024-01041-5.pdf).
 
+- __2024-08-14__: We are thrilled to release the new feature [export standalone version](#export-standalone-version-for-models), feel free to try it out!
 # Get Source Code
 
 It is important to clone the submodules along, with `--recursive` option.
@@ -79,6 +80,16 @@ iotlab-auth --add-ssh-key
 ! FOR PYTORCH USER ! Please first [transform your model in *TorchScript* representation](#how-to-torchscript-your-model) !
 
 Before running the evaluation, please get your model files ready from ML frameworks (TFLite, PyTorch etc.). You can find some model file examples in `model_zoo` folder.
+
+## Export Standalone Version for Models
+
+You just want a _clean_, ready-for-deploy workspace for model inference / update and on-device training, and want to throw out all the unnecessary measurements, CoAP server etc. parts? No problem, please kindly try out the `export_standalone.py` program, e.g. 
+
+```bash
+python export_standalone.py --board nrf52840dk ./model_zoo/mnist_0.983_quantized.tflite ../temp
+```
+
+Then you will get your C code only for model inference on the `../temp` folder. In future we will also support standalone version for model update and on-device training.
 
 ## Model Update
 Please refer to [Running Model Update on IoT Boards](https://github.com/zhaolanhuang/RIOT-ML/blob/main/examples/README.model_update.md).
