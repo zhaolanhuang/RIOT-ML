@@ -24,7 +24,6 @@
 #include "stdio_base.h"
 #include "mlmci.h"
 
-#include <tvmgen_default.h>
 extern mlmodel_t *model_ptr;
 
 int main(void)
