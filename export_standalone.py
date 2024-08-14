@@ -14,7 +14,6 @@ MIN_REQ_FILES = [
 
 def export_minimal(model_file_path, board, export_path, shape_dict=None):
     model_export_path = export_path + "/models/default/"
-    print(export_path)
     os.makedirs(export_path, exist_ok=True)
     os.makedirs(model_export_path, exist_ok=True)
 
@@ -37,4 +36,27 @@ def export_minimal(model_file_path, board, export_path, shape_dict=None):
 
 
 if __name__ == "__main__":
-    export_minimal("./model_zoo/mnist_0.983_quantized.tflite", "nrf52840dk", "../temp/")
+    import argparse
+    import os
+    parser = argparse.ArgumentParser()
+    parser.add_argument("model_file", help="path to machine learning model file.",
+                        type=str)
+    parser.add_argument("export_path", help="export path of standalone instance folder",
+                        type=str)
+    
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument("--minimal", help="Minimal Standalone. (default)",
+                            action="store_true")
+    mode_group.add_argument("--suit", help="Standalone with SUIT support. (Not supported yet)",
+                            action="store_true")
+ 
+    parser.add_argument("--board", help="IoT board name", default="stm32f746g-disco",
+                        type=str)
+    parser.add_argument("--input-shape", default=None, type=lambda s: [int(i) for i in s.split(',')], 
+                        help="specify the input shape, mandatory for pytorch model. format: N,C,W,H. default: None")
+    parser.add_argument("--odt", help="Enable on-device training. Please specify the configuration in odt_config.yml. (Not supported yet)",
+                        action="store_true")
+    args = parser.parse_args()
+    export_minimal(args.model_file, args.board, args.export_path + "/", {'input': args.input_shape} if args.input_shape is not None else None)
+    
+    # export_minimal("./model_zoo/mnist_0.983_quantized.tflite", "nrf52840dk", "../temp/")
