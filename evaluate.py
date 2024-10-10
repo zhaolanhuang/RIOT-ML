@@ -19,7 +19,7 @@ def evaluate_per_model(model_path, board='stm32f746g-disco', trials_num=10, use_
                        shape_dict=None):
     print("Load Model and Code Gen...")
     
-    generate_model_c_code(model_path, board, './models/default/default.tar', shape_dict)
+    generate_model_c_code(model_path, board, './models/default/default.tar', shape_dict=shape_dict)
 
     print("Load Model and Code Gen...done")
 
