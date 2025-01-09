@@ -76,6 +76,9 @@ To use remote boards on [FIT IoT-LAB](https://www.iot-lab.info/docs/getting-star
 iotlab-auth -u <login user name>
 iotlab-auth --add-ssh-key
 ```
+## RIOT-ML Installation and Troubleshooting Guide
+You can find RIOT-ML Installation and Troubleshooting Guide [here](Step_by_step_installation_example.md).
+
 # Usage
 ! FOR PYTORCH USER ! Please first [transform your model in *TorchScript* representation](#how-to-torchscript-your-model) !
 
