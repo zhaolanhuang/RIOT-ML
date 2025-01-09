@@ -82,6 +82,7 @@ def wrap_fusion_iter_worker_compute_tir(attrs, inputs, output_type):
         func = attrs["relay_func"]
         
         ib = tvm.tir.ir_builder.create()
+
         iterator = ib.allocate("int32", (4,),  "iterator")
         iterator[0]=iterator[1]=iterator[2]=iterator[3]=0
         iteratee_output = ib.allocate(func.body.checked_type.dtype, func.body.checked_type.shape,  "iteratee_output")
@@ -132,9 +133,13 @@ def wrap_fusion_iter_worker_with_cache_compute_tir(attrs, inputs, output_type):
         func = attrs["relay_func"]
         cache_vars = attrs["cache_vars"]
 
-        
-        
         ib = tvm.tir.ir_builder.create()
+        
+        # Without this dummy block, in some corner cases the USMP analyser can not discover conflicts between io data
+        # In that case the allocation of i/o workspaces will overlapped.
+        in_data = ib.buffer_ptr(ins[0])
+        out_data = ib.buffer_ptr(outs[0])
+        in_data[0]=out_data[0]=tvm.runtime.const(0, dtype=in_data.dtype)
 
         iterator = ib.allocate("int32", (4,),  "iterator", scope="global")
         iterator[0]=iterator[1]=iterator[2]=iterator[3]=0
