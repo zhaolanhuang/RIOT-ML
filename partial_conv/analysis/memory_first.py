@@ -30,10 +30,34 @@ class MinimizeMACstPeakMEMOptimizer:
         above_mem_th_idx = np.nonzero(fusion_mem_graph > peak_mem_th)
         fusion_mac_graph[above_mem_th_idx] = math.inf
         N = len(layers)
-        min_mac, opt_path = find_shortest_path(fusion_mac_graph, 0, N)
-        print(f'[MinimizeMACstPeakMEMOptimizer] Layer Num: {N}, Opt Path: {opt_path}, Cost: {min_mac}')
+
+        cur_peak_mem = np.max(fusion_mem_graph[fusion_mem_graph != np.inf])
+        min_mem = math.inf
+        cur_mac = math.inf
+
+        while True:
+            fusion_mac, p = find_shortest_path(fusion_mac_graph, 0, N)
+
+            if fusion_mac <= cur_mac and cur_peak_mem < peak_mem_th and p is not []:
+                opt_path = p
+                min_mem = cur_peak_mem
+                cur_mac = fusion_mac
+
+            above_mem_th_idx = np.nonzero(fusion_mem_graph >= cur_peak_mem)
+            fusion_mac_graph[above_mem_th_idx] = math.inf
+            fusion_mem_graph[above_mem_th_idx] = math.inf   
+            temp = fusion_mem_graph[fusion_mem_graph != np.inf]
+            if len(temp) == 0:
+                break
+            cur_peak_mem = np.max(temp)
+        
+        
+        # min_mac, opt_path = find_shortest_path(fusion_mac_graph, 0, N)
+
+
+        print(f'[MinimizeMACstPeakMEMOptimizer] Layer Num: {N}, Opt Path: {opt_path}, Cost: {cur_mac}')
         # opt_path = [0, 1, 2, 4, 5, 6, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35, 38, 41, 44, 47, 50, 53]
-        return min_mac, from_path_to_fusion_setting(opt_path)
+        return cur_mac, from_path_to_fusion_setting(opt_path)
     
 # Min Peak MEM subject to MAC Overhead Factor (MOF)
 class MinimizePeakMEMstMOFOptimizer:

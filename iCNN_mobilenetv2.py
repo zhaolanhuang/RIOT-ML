@@ -309,6 +309,11 @@ def MBConv_Fake_INT8(input ,intput_channel, output_channel, expansion=1, stride=
     intput_channel = int(intput_channel)
     output_channel = int(output_channel)
 
+    if isinstance(padding, int):
+        padding = (padding, padding)
+    if isinstance(kernel_size, int):
+        kernel_size = (kernel_size, kernel_size)
+
     weight_1x1_conv2d = relay.var(f"weight_1x1_conv2d_{i}", shape=(intput_channel * expansion, intput_channel, 1, 1), dtype="int8")
     _1x1_conv2d = relay.nn.conv2d(input, weight_1x1_conv2d, kernel_size=(1, 1), out_dtype="int8")
 
@@ -378,74 +383,237 @@ def create_mbv2_fake_int8(input_size=(1, 3, 224, 224), w=1):
     mod = relay.transform.InferType()(mod)
     return mod
 
+def create_mbv2_vww_5fps_int8(input_size=(1, 3, 80, 80)):
+    MBConv=MBConv_Fake_INT8
+    data = relay.var("data", shape=input_size, dtype="int8")
+
+    weight1 = relay.var("conv2d_1", shape=(int(16), input_size[1], 3 ,3), dtype="int8")
+    conv2d_1 = relay.nn.conv2d(data, weight1, kernel_size=(3, 3), strides=(2, 2), 
+                               padding=(1,1), 
+                               out_dtype="int8"
+                               )
+    weight_depth_wise = relay.var(f"weight_depth_wise_1", shape=(16, 1, 3, 3), dtype="int8")
+    depth_wise = relay.nn.conv2d(conv2d_1, weight_depth_wise, kernel_size=(3, 3), strides=(1, 1), padding=(1, 1),
+                                 groups=16, channels=16, out_dtype="int8")
+    weight2 = relay.var("conv2d_2", shape=(8, 16, 1, 1), dtype="int8")
+    conv2d_2 = relay.nn.conv2d(depth_wise, weight2, kernel_size=(1, 1), strides=(1, 1), 
+                               padding=(0, 0), 
+                               out_dtype="int8"
+                               )
+    
+    mb = MBConv(conv2d_2, 8, 16, 6, 2)
+    mb = MBConv(mb, 16, 16, 3, 1)
+    mb = MBConv(mb, 16, 16, 3, 1)
+
+    mb = MBConv(mb, 16, 24, 3, 2, 3, 7)
+
+    mb = MBConv(mb, 24, 24, 6, 1)
+    mb = MBConv(mb, 24, 24, 5, 1, 2, 5)
+    mb = MBConv(mb, 24, 40, 6, 2, 3, 7)
+
+    mb = MBConv(mb, 40, 40, 6, 1, 3, 7)
+
+    mb = MBConv(mb, 40, 48, 6, 1, 1, 3)
+    mb = MBConv(mb, 48, 48, 4, 1, 1, 3)
+    mb = MBConv(mb, 48, 96, 5, 2, 2, 5)
+
+    mb = MBConv(mb, 96, 96, 5, 1, 1, 3)
+    mb = MBConv(mb, 96, 96, 4, 1, 1, 3)
+    mb = MBConv(mb, 96, 160, 3, 1, 3, 7)
+    # PoolingLayer(pool_size=3, stride=1),
+    body = mb # TODO
+
+    func = relay.Function(relay.analysis.free_vars(body), body)
+    mod = tvm.IRModule.from_expr(func)
+    mod = relay.transform.InferType()(mod)
+    return mod
+
+def create_mcunet_320kb_imagenet_int8(input_size=(1, 3, 176, 176)):
+    MBConv=MBConv_Fake_INT8
+    data = relay.var("data", shape=input_size, dtype="int8")
+
+    weight1 = relay.var("conv2d_1", shape=(int(16), input_size[1], 3 ,3), dtype="int8")
+    conv2d_1 = relay.nn.conv2d(data, weight1, kernel_size=(3, 3), strides=(2, 2), 
+                               padding=(1,1), 
+                               out_dtype="int8"
+                               )
+    weight_depth_wise = relay.var(f"weight_depth_wise_1", shape=(16, 1, 3, 3), dtype="int8")
+    depth_wise = relay.nn.conv2d(conv2d_1, weight_depth_wise, kernel_size=(3, 3), strides=(1, 1), padding=(1, 1),
+                                 groups=16, channels=16, out_dtype="int8")
+    weight2 = relay.var("conv2d_2", shape=(8, 16, 1, 1), dtype="int8")
+    conv2d_2 = relay.nn.conv2d(depth_wise, weight2, kernel_size=(1, 1), strides=(1, 1), 
+                               padding=(0, 0), 
+                               out_dtype="int8"
+                               )
+    mb = MBConv(conv2d_2, 8, 16, 3, 2, 3, 7)
+    mb = MBConv(mb, 16, 16, 5, 1)
+    mb = MBConv(mb, 16, 16, 5, 1, 3, 7)
+    
+    mb = MBConv(mb, 16, 16, 4, 1, 2, 5)
+
+    mb = MBConv(mb, 16, 24, 5, 2, 2, 5)
+
+    mb = MBConv(mb, 24, 24, 5, 1, 2, 5)
+
+    mb = MBConv(mb, 24, 24, 5, 1, 2, 5)
+
+    mb = MBConv(mb, 24, 40, 5, 2, 1, 3)
+
+    mb = MBConv(mb, 40, 40, 6, 1, 3, 7)
+    mb = MBConv(mb, 40, 40, 4, 1, 2, 5)
+    mb = MBConv(mb, 40, 48, 5, 1, 2, 5)
+
+    mb = MBConv(mb, 48, 48, 5, 1, 3, 7)
+    mb = MBConv(mb, 48, 48, 5, 1, 1, 3)
+
+    mb = MBConv(mb, 48, 96, 6, 2, 1, 3)
+    mb = MBConv(mb, 96, 96, 5, 1, 3, 7)
+    mb = MBConv(mb, 96, 96, 4, 1, 1, 3)
+    mb = MBConv(mb, 96, 160, 5, 1, 3, 7)
+    # PoolingLayer(pool_size=3, stride=1),
+    body = mb # TODO
+
+    func = relay.Function(relay.analysis.free_vars(body), body)
+    mod = tvm.IRModule.from_expr(func)
+    mod = relay.transform.InferType()(mod)
+    return mod
+
+def create_np_ramdon_params_for(mod):
+    relay_params = mod["main"].params
+    params = {}
+
+    for p in relay_params:
+        if p.name_hint == 'data':
+            continue
+        shape = [int(i) for i in p.type_annotation.shape]
+        nd_arr = tvm.nd.array(np.random.randint(-255, 254, size=shape).astype(np.int8))
+        params[p.name_hint] = nd_arr
+    return params
+
 from partial_conv.fusion_network_rewrite import MultiStageFusionNetworkRewriter
 from tvm.relay import dataflow_pattern as dfp
+import copy
+
+def export_models_from_analytic_settings(s_path="analytic_results_v1.json", export_dir="./MFC_models/"):
+    import json
+    with open(s_path, "rb") as f:
+        settings_and_res = json.load(f)
+    mbv2_w35 = create_mbv2_fake_int8(input_size=(1, 3, 144, 144), w=.35)
+    mbv2_vvw = create_mbv2_vww_5fps_int8()
+    mbv2_320kb = create_mcunet_320kb_imagenet_int8()
+    new_results = []
+
+    for setting in settings_and_res:
+        if setting["Model"] == "MBV2-w0.35-r144":
+            mod_ori = mbv2_w35
+        elif setting["Model"] == "MCUNetv2-vww-5fps-r80":
+            mod_ori = mbv2_vvw
+        else:
+            mod_ori = mbv2_320kb
+        fusion_range = setting["Fusion Range"]
+        model_dir_name = f'{setting["Model"]}_{setting["Configuration"]}'
+        export_dir_path = os.path.join(export_dir, model_dir_name)
+        if not os.path.exists(export_dir_path):
+            os.mkdir(export_dir_path)
+
+        export_model_path = os.path.join(export_dir_path, "default.tar")
+
+        fusion_rewriter = MultiStageFusionNetworkRewriter(fusion_range, mod_ori["main"])  
+        fusion_body = fusion_rewriter.fused_neural_network
+        mod_fusion = tvm.IRModule.from_expr(fusion_body)
+        mod_fusion = relay.transform.InferType()(mod_fusion)
+        mod = mod_fusion
+
+        params = create_np_ramdon_params_for(mod)
+        RUNTIME = tvm.relay.backend.Runtime("crt", {'system-lib':False}) # should not use 'system-lib:true' while AoT
+        EXECUTOR = tvm.relay.backend.Executor(
+            "aot",
+            {
+            "unpacked-api": True, 
+            "interface-api": "c", 
+            "workspace-byte-alignment": 4,
+            "link-params": True,
+            },
+        )
+        # TARGET = tvm.target.target.micro('host')
+        # TARGET = tvm.target.target.micro('nrf52840')
+        TARGET = "c -keys=partial_conv,arm_cpu,cpu -mcpu=cortex-m4+nodsp -model=nrf52840"      
+        with tvm.transform.PassContext(opt_level=0, config={
+                                                        "tir.disable_vectorize": True, 
+                                                        "tir.usmp.enable": True, # what is usmp? -> Enable Unified Static Memory Planning
+                                                        "tir.usmp.algorithm": "hill_climb",
+                                                        "relay.backend.use_auto_scheduler": True, # Keep that for Primitive Function with multiple heavy ops (like Convs)
+                                                        "relay.remove_standalone_reshapes.enable": False
+                                                        },
+                                                        # instruments=[PrintBeforeAll(),PrintAfterAll()]
+                                                        ): 
+
+            module = relay.build(mod, target=TARGET, runtime=RUNTIME, params=None, executor=EXECUTOR)
+            mem_pool_size = int([v for v in module.function_metadata['__tvm_main__'].workspace_sizes.values()][0])
+            print(f"mem pool size: {mem_pool_size}")
+        export_model_library_format(module, export_model_path)
+        generate_mlmci_files(module, params, export_dir_path)
+        
+        new_s = copy.deepcopy(setting)
+        new_s['peak_mem_usage'] = mem_pool_size
+        new_results.append(new_s)
+        with open(export_dir_path + "/result.json", "w") as f:
+            json.dump(new_s, f)
+
+    with open(export_dir + "/result.json", "w") as f:
+        json.dump(new_results, f)
+
+
 
 if __name__=="__main__":
+    export_models_from_analytic_settings(export_dir="./MFC_models_20250112/")
+    # mod_ori = create_mbv2_fake_int8(input_size=(1, 3, 144, 144), w=.35)
+
+    # fusion_range =   [(0, 1), (2, 3), (4, 7), (8, 10), (11, 13), (14, 16), (17, 19), (20, 22), (23, 25), (26, 28), (29, 31), (32, 34), (35, 37), (38, 40), (41, 43), (44, 46), (47, 49), (50, 52)]
+    # fusion_rewriter = MultiStageFusionNetworkRewriter(fusion_range, mod_ori["main"])  
     
-    mod_ori = create_mbv2_fake_int8(input_size=(1, 3, 224, 224), w=1)
+    # fusion_body = fusion_rewriter.fused_neural_network
 
-    fusion_range = [[0, 12], [13, 21], [22, 24], [25, 27], [28, 30], [31, 33], [34, 36], [37, 39], [40, 42], [43, 45], [46, 48], [49, 51]]
-    fusion_rewriter = MultiStageFusionNetworkRewriter(fusion_range, mod_ori["main"])  
+    # mod_fusion = tvm.IRModule.from_expr(fusion_body)
+    # mod_fusion = relay.transform.InferType()(mod_fusion)
+    # mod_ori = create_mcunet_320kb_imagenet_int8()
+
+    # mod = mod_ori
+
+    # params = create_np_ramdon_params_for(mod)
+    # RUNTIME = tvm.relay.backend.Runtime("crt", {'system-lib':False}) # should not use 'system-lib:true' while AoT
+    # EXECUTOR = tvm.relay.backend.Executor(
+    #     "aot",
+    #     {
+    #     "unpacked-api": True, 
+    #     "interface-api": "c", 
+    #     "workspace-byte-alignment": 4,
+    #     "link-params": True,
+    #     },
+    # )
+    # # TARGET = tvm.target.target.micro('host')
+    # # TARGET = tvm.target.target.micro('nrf52840')
+    # TARGET = "c -keys=partial_conv,arm_cpu,cpu -mcpu=cortex-m4+nodsp -model=nrf52840"
+    # # """c -keys=arm_cpu,cpu -mcpu=cortex-m4+nodsp -model=nrf52840"""
+    # # TARGET = tvm.target.target.stm32('stm32F7xx')
     
-    fusion_body = fusion_rewriter.fused_neural_network
+    # with tvm.transform.PassContext(opt_level=0, config={
+    #                                                 "tir.disable_vectorize": True, 
+    #                                                 "tir.usmp.enable": True, # what is usmp? -> Enable Unified Static Memory Planning
+    #                                                 "tir.usmp.algorithm": "hill_climb",
+    #                                                 "relay.backend.use_auto_scheduler": True, # Keep that for Primitive Function with multiple heavy ops (like Convs)
+    #                                                 "relay.remove_standalone_reshapes.enable": False
+    #                                                 },
+    #                                                 # instruments=[PrintBeforeAll(),PrintAfterAll()]
+    #                                                 ): 
 
-    # func = relay.Function(relay.analysis.free_vars(fusion_body), fusion_body)
-
-    # breakpoint()
-
-    mod_fusion = tvm.IRModule.from_expr(fusion_body)
-    mod_fusion = relay.transform.InferType()(mod_fusion)
-
-    mod = mod_fusion
-
-    def create_np_ramdon_params_for(mod):
-        relay_params = mod["main"].params
-        params = {}
-
-        for p in relay_params:
-            if p.name_hint == 'data':
-                continue
-            shape = [int(i) for i in p.type_annotation.shape]
-            nd_arr = tvm.nd.array(np.random.randint(-255, 254, size=shape).astype(np.int8))
-            params[p.name_hint] = nd_arr
-        return params
-    params = create_np_ramdon_params_for(mod)
-    # breakpoint()
-
-    RUNTIME = tvm.relay.backend.Runtime("crt", {'system-lib':False}) # should not use 'system-lib:true' while AoT
-    EXECUTOR = tvm.relay.backend.Executor(
-        "aot",
-        {
-        "unpacked-api": True, 
-        "interface-api": "c", 
-        "workspace-byte-alignment": 4,
-        "link-params": True,
-        },
-    )
-    # TARGET = tvm.target.target.micro('host')
-    # TARGET = tvm.target.target.micro('nrf52840')
-    TARGET = "c -keys=partial_conv,arm_cpu,cpu -mcpu=cortex-m4+nodsp -model=nrf52840"
-    # """c -keys=arm_cpu,cpu -mcpu=cortex-m4+nodsp -model=nrf52840"""
-    # TARGET = tvm.target.target.stm32('stm32F7xx')
-    
+    #     module = relay.build(mod, target=TARGET, runtime=RUNTIME, params=None, executor=EXECUTOR)
+    #     mem_pool_size = [v for v in module.function_metadata['__tvm_main__'].workspace_sizes.values()][0]
+    #     print(f"mem pool size: {mem_pool_size}")
+    # export_model_library_format(module, "./models/default/default.tar")
+    # generate_mlmci_files(module, params, "./")
 
 
-
-
-    with tvm.transform.PassContext(opt_level=0, config={
-                                                    "tir.disable_vectorize": True, 
-                                                    "tir.usmp.enable": True, # what is usmp? -> Enable Unified Static Memory Planning
-                                                    "tir.usmp.algorithm": "hill_climb",
-                                                    "relay.backend.use_auto_scheduler": True, # Keep that for Primitive Function with multiple heavy ops (like Convs)
-                                                    "relay.remove_standalone_reshapes.enable": False
-                                                    },
-                                                    # instruments=[PrintBeforeAll(),PrintAfterAll()]
-                                                    ): 
-
-        module = relay.build(mod, target=TARGET, runtime=RUNTIME, params=None, executor=EXECUTOR)
-    export_model_library_format(module, "./models/default/default.tar")
-    generate_mlmci_files(module, params, "./")
 
 
 

@@ -1,6 +1,7 @@
 from utils import extract_io_vars_from_module, generate_model_params_files, generate_model_io_vars_files, generate_model_binding_files
 
 def generate_mlmci_files(relay_module, mod_params, output_path="./"):
+    output_path = output_path + "/"
     module = relay_module
     params = mod_params
     tvm_input_vars, tvm_output_vars = extract_io_vars_from_module(module)
