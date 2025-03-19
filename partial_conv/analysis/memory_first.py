@@ -3,7 +3,7 @@ import math
 import numpy as np
 from .fusion_cost_graph import MemoryUsageEstimator, FusionCostGraphProducer, MACEstimator
 from .minimax_memory_optimizer import find_minimax_path, find_shortest_path
-from .find_k_shortest_paths import find_k_shortest_paths_under_weight_sum_threshold
+# from .find_k_shortest_paths import find_k_shortest_paths_under_weight_sum_threshold
 from .utils import from_path_to_fusion_setting
 
 class MinimaxPathOptimizer:

@@ -392,7 +392,7 @@ def create_mbv2_vww_5fps_int8(input_size=(1, 3, 80, 80)):
                                padding=(1,1), 
                                out_dtype="int8"
                                )
-    weight_depth_wise = relay.var(f"weight_depth_wise_1", shape=(16, 1, 3, 3), dtype="int8")
+    weight_depth_wise = relay.var(f"weight_depth_wise_1_", shape=(16, 1, 3, 3), dtype="int8")
     depth_wise = relay.nn.conv2d(conv2d_1, weight_depth_wise, kernel_size=(3, 3), strides=(1, 1), padding=(1, 1),
                                  groups=16, channels=16, out_dtype="int8")
     weight2 = relay.var("conv2d_2", shape=(8, 16, 1, 1), dtype="int8")
@@ -437,7 +437,7 @@ def create_mcunet_320kb_imagenet_int8(input_size=(1, 3, 176, 176)):
                                padding=(1,1), 
                                out_dtype="int8"
                                )
-    weight_depth_wise = relay.var(f"weight_depth_wise_1", shape=(16, 1, 3, 3), dtype="int8")
+    weight_depth_wise = relay.var(f"weight_depth_wise_1_", shape=(16, 1, 3, 3), dtype="int8")
     depth_wise = relay.nn.conv2d(conv2d_1, weight_depth_wise, kernel_size=(3, 3), strides=(1, 1), padding=(1, 1),
                                  groups=16, channels=16, out_dtype="int8")
     weight2 = relay.var("conv2d_2", shape=(8, 16, 1, 1), dtype="int8")
@@ -566,52 +566,57 @@ def export_models_from_analytic_settings(s_path="analytic_results_v1.json", expo
 
 
 if __name__=="__main__":
-    export_models_from_analytic_settings(export_dir="./MFC_models_20250112/")
-    # mod_ori = create_mbv2_fake_int8(input_size=(1, 3, 144, 144), w=.35)
-
-    # fusion_range =   [(0, 1), (2, 3), (4, 7), (8, 10), (11, 13), (14, 16), (17, 19), (20, 22), (23, 25), (26, 28), (29, 31), (32, 34), (35, 37), (38, 40), (41, 43), (44, 46), (47, 49), (50, 52)]
-    # fusion_rewriter = MultiStageFusionNetworkRewriter(fusion_range, mod_ori["main"])  
-    
-    # fusion_body = fusion_rewriter.fused_neural_network
-
-    # mod_fusion = tvm.IRModule.from_expr(fusion_body)
-    # mod_fusion = relay.transform.InferType()(mod_fusion)
+    # export_models_from_analytic_settings(export_dir="./MFC_models_20250112/")
+    mod_ori = create_mbv2_fake_int8(input_size=(1, 3, 144, 144), w=.35)
+    # mod_ori = create_mbv2_vww_5fps_int8()
     # mod_ori = create_mcunet_320kb_imagenet_int8()
 
-    # mod = mod_ori
-
-    # params = create_np_ramdon_params_for(mod)
-    # RUNTIME = tvm.relay.backend.Runtime("crt", {'system-lib':False}) # should not use 'system-lib:true' while AoT
-    # EXECUTOR = tvm.relay.backend.Executor(
-    #     "aot",
-    #     {
-    #     "unpacked-api": True, 
-    #     "interface-api": "c", 
-    #     "workspace-byte-alignment": 4,
-    #     "link-params": True,
-    #     },
-    # )
-    # # TARGET = tvm.target.target.micro('host')
-    # # TARGET = tvm.target.target.micro('nrf52840')
-    # TARGET = "c -keys=partial_conv,arm_cpu,cpu -mcpu=cortex-m4+nodsp -model=nrf52840"
-    # # """c -keys=arm_cpu,cpu -mcpu=cortex-m4+nodsp -model=nrf52840"""
-    # # TARGET = tvm.target.target.stm32('stm32F7xx')
+    fusion_range = [[0, 6], [7, 12], [13, 15], [16, 21], [22, 22], [23, 24], [25, 25], [26, 27], [28, 28], [29, 30], [31, 31], [32, 33], [34, 36], [37, 41], [42, 43], [44, 45], [46, 46], [47, 48], [49, 49], [50, 52]]
+    fusion_rewriter = MultiStageFusionNetworkRewriter(fusion_range, mod_ori["main"])  
     
-    # with tvm.transform.PassContext(opt_level=0, config={
-    #                                                 "tir.disable_vectorize": True, 
-    #                                                 "tir.usmp.enable": True, # what is usmp? -> Enable Unified Static Memory Planning
-    #                                                 "tir.usmp.algorithm": "hill_climb",
-    #                                                 "relay.backend.use_auto_scheduler": True, # Keep that for Primitive Function with multiple heavy ops (like Convs)
-    #                                                 "relay.remove_standalone_reshapes.enable": False
-    #                                                 },
-    #                                                 # instruments=[PrintBeforeAll(),PrintAfterAll()]
-    #                                                 ): 
+    fusion_body = fusion_rewriter.fused_neural_network
 
-    #     module = relay.build(mod, target=TARGET, runtime=RUNTIME, params=None, executor=EXECUTOR)
-    #     mem_pool_size = [v for v in module.function_metadata['__tvm_main__'].workspace_sizes.values()][0]
-    #     print(f"mem pool size: {mem_pool_size}")
-    # export_model_library_format(module, "./models/default/default.tar")
-    # generate_mlmci_files(module, params, "./")
+    mod_fusion = tvm.IRModule.from_expr(fusion_body)
+    mod_fusion = relay.transform.InferType()(mod_fusion)
+    # mod_ori = create_mcunet_320kb_imagenet_int8()
+
+    mod = mod_fusion
+
+    params = create_np_ramdon_params_for(mod)
+    RUNTIME = tvm.relay.backend.Runtime("crt", {'system-lib':False}) # should not use 'system-lib:true' while AoT
+    EXECUTOR = tvm.relay.backend.Executor(
+        "aot",
+        {
+        "unpacked-api": True, 
+        "interface-api": "c", 
+        "workspace-byte-alignment": 4,
+        "link-params": True,
+        },
+    )
+    # TARGET = tvm.target.target.micro('host')
+    # TARGET = tvm.target.target.micro('nrf52840')
+    TARGET = "c -keys=partial_conv,arm_cpu,cpu -mcpu=cortex-m4+nodsp -model=nrf52840"
+    # """c -keys=arm_cpu,cpu -mcpu=cortex-m4+nodsp -model=nrf52840"""
+    # TARGET = tvm.target.target.stm32('stm32F7xx')
+    
+    with tvm.transform.PassContext(opt_level=0, config={
+                                                    "tir.disable_vectorize": True, 
+                                                    "tir.usmp.enable": True, # what is usmp? -> Enable Unified Static Memory Planning
+                                                    "tir.usmp.algorithm": "hill_climb",
+                                                    "relay.backend.use_auto_scheduler": True, # Keep that for Primitive Function with multiple heavy ops (like Convs)
+                                                    "relay.remove_standalone_reshapes.enable": False
+                                                    },
+                                                    # instruments=[PrintBeforeAll(),PrintAfterAll()]
+                                                    ): 
+
+        module = relay.build(mod, target=TARGET, runtime=RUNTIME, params=None, executor=EXECUTOR)
+        mem_pool_size = [v for v in module.function_metadata['__tvm_main__'].workspace_sizes.values()][0]
+        print(f"mem pool size: {mem_pool_size}")
+    export_model_library_format(module, "./models/default/default.tar")
+    generate_mlmci_files(module, params, "./")
+    
+    from partial_conv.op.macro_globalvar import get_recorded_worker_id_op_num
+    print(get_recorded_worker_id_op_num())
 
 
 
