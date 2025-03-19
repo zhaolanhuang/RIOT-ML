@@ -50,9 +50,9 @@ _op.register_stateful(op_name, False)
 # Trick 1: fetch and use current used te compiler to lower iteratee function, so it will be store in the lowered mods
 # Trick 2: Disable the mutex of te_compiler to un-block the lower of iteratee (context: in LowerInternal)
 # Trick 3: Disable RemoveUnusedFunction of the remove_standalone_reshapes, so the iteratee wouldn't be optimized out
-def fusion_iter_worker(iter_begin, iter_end, iter_strides, output_shape, func_args, func, cache_vars=None):
+def fusion_iter_worker(iter_begin, iter_end, iter_strides, output_shape, func_args, func, cache_vars=None, worker_id=-1):
     attrs = tvm.ir.make_node("DictAttrs", iter_begin=iter_begin,iter_end=iter_end, iter_strides=iter_strides, 
-                             relay_func=func, output_shape=output_shape, cache_vars=cache_vars)
+                             relay_func=func, output_shape=output_shape, cache_vars=cache_vars, worker_id=worker_id)
     return relay.Call(relay.op.get("fusion_iter_worker"), func_args, attrs)
 
 dtype_bytes = {"int32" : 4, "float32" : 4}
@@ -122,6 +122,8 @@ def allocate_cache_buffers_for(ib, cache_vars):
         bufs.append(buf)
     return bufs
 
+from .global_identifier import get_fusion_worker_id, increase_fusion_worker_id, clear_fusion_op_num
+from .macro_globalvar import OUTPUT_DIRECTION_VAR, DECLEAR_EXTERN_OUTPUT_DIRECTION_VAR, invoke_c_macro
 # Define the compute function for the my_add operator
 def wrap_fusion_iter_worker_with_cache_compute_tir(attrs, inputs, output_type):
     def _fusion_iter_worker_compute_tir(ins, outs):
@@ -134,6 +136,10 @@ def wrap_fusion_iter_worker_with_cache_compute_tir(attrs, inputs, output_type):
         cache_vars = attrs["cache_vars"]
 
         ib = tvm.tir.ir_builder.create()
+
+        worker_id = get_fusion_worker_id()
+
+        ib.emit(invoke_c_macro(DECLEAR_EXTERN_OUTPUT_DIRECTION_VAR, worker_id))     
         
         # Without this dummy block, in some corner cases the USMP analyser can not discover conflicts between io data
         # In that case the allocation of i/o workspaces will overlapped.
@@ -174,7 +180,8 @@ def wrap_fusion_iter_worker_with_cache_compute_tir(attrs, inputs, output_type):
                     copy_in_place_spatial_ib(ib, outs[0], iteratee_output.asobject(), bg_ind.asobject())
                     bg_ind[3] = bg_ind[3] + 1
                     with ib.if_scope(bg_ind[3] ==  output_shape[3] - 1):
-                        bg_ind[2] = bg_ind[2] + 1                        
+                        bg_ind[2] = bg_ind[2] + 1           
+             
 
                 iterator[3] += strides[3]
             # this assignment of value must be put latter than the iteratee function, 
@@ -184,13 +191,14 @@ def wrap_fusion_iter_worker_with_cache_compute_tir(attrs, inputs, output_type):
             iterator[2] += strides[2]
         ib_stmt = ib.get()
         # breakpoint()
+        increase_fusion_worker_id()
         return ib_stmt
-    
     return _fusion_iter_worker_compute_tir
 
 @relay.op.op.register_compute("fusion_iter_worker")
 def fusion_iter_worker_compute(attrs, inputs, output_type):
     print("We are now at fusion_iter_worker_comp")
+    clear_fusion_op_num()
     func = attrs["relay_func"]
     te_compiler = tvm.relay.backend.te_compiler.current()
     te_compiler.lower(func, tvm.target.Target.current())

@@ -146,7 +146,7 @@ class InsertConvInputCacheAndIterPool(relay.ExprMutator):
             
             if not kernel_size == [1, 1]:
                 cache_out = cache_conv_input(input_to_cache, buffer_shape=buffer_shape, max_idx=[0, 0], 
-                                            conv_kernel_size=kernel_size, conv_strides=strides, conv_padding=padding,
+                                            conv_kernel_size=kernel_size, conv_strides=strides, conv_padding=padding, conv_input_shape=input_shape,
                                             conv_dtype=call.checked_type.dtype)
             else:
                 cache_out = input_to_cache
