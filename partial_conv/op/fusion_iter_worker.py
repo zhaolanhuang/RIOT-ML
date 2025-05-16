@@ -164,6 +164,13 @@ def wrap_fusion_iter_worker_with_cache_compute_tir(attrs, inputs, output_type):
                     i[0]=i[1]=i[2]=i[3]=0
                 else:
                     i[0] = tvm.runtime.const(0, dtype=i.dtype)
+
+        def set_cur_idx_var_last_zero():
+            for i in cache_bufs:
+                if i.asobject().shape[0] == 4:
+                    i[3]=0
+                else:
+                    i[0] = tvm.runtime.const(0, dtype=i.dtype)
         output_shape = attrs['output_shape']
         
         iterator[2] = begin[2]
@@ -187,7 +194,7 @@ def wrap_fusion_iter_worker_with_cache_compute_tir(attrs, inputs, output_type):
             # this assignment of value must be put latter than the iteratee function, 
             # so that its liveness in tvm will longer than all the variable in iteratee function.
             # which means it will all `conflict` with vars in iteratee, and wouldnt be accidently overlapped with each other..
-            set_cur_idx_var_zero() 
+            set_cur_idx_var_last_zero() 
             iterator[2] += strides[2]
         ib_stmt = ib.get()
         # breakpoint()

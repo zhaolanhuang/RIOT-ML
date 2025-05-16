@@ -50,7 +50,7 @@ def calculate_new_input_shape_and_strides(op_info, expected_output_shape):
         new_input_stride[0] = new_input_stride[0] * s[0]
         new_input_stride[1] = new_input_stride[1] * s[1]
         i['input_tile_size'] = [*new_input_shape]
-        i['input_tile_strides'] = [*new_input_stride]
+        i['input_tile_stride'] = [*new_input_stride]
     return new_input_shape, new_input_stride
 
 
@@ -130,6 +130,7 @@ class InsertConvInputCacheAndIterPool(relay.ExprMutator):
             op_info = self.op_to_info_map[call]
             input_shape = op_info['input_shape']
             input_tile_size = op_info['input_tile_size']
+            input_tile_stride = op_info['input_tile_stride']
             kernel_size = op_info['kernel_size']
             strides = op_info['strides']
             padding = op_info['padding']
@@ -147,6 +148,7 @@ class InsertConvInputCacheAndIterPool(relay.ExprMutator):
             if not kernel_size == [1, 1]:
                 cache_out = cache_conv_input(input_to_cache, buffer_shape=buffer_shape, max_idx=[0, 0], 
                                             conv_kernel_size=kernel_size, conv_strides=strides, conv_padding=padding, conv_input_shape=input_shape,
+                                            input_tile_size=input_tile_size, input_tile_stride=input_tile_stride,
                                             conv_dtype=call.checked_type.dtype)
             else:
                 cache_out = input_to_cache

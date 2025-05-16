@@ -33,7 +33,7 @@ class CollectOpShapeInfo(relay.ExprVisitor):
             'strides': strides,
             'groups': groups,
             'input_tile_size': None,
-            'input_tile_strides': None,
+            'input_tile_stride': None,
             'first_conv': False,
             'conv_index' : None
         }
@@ -85,12 +85,12 @@ class ReWriteInputsShape(relay.ExprMutator):
 
     def visit_var(self, var):
         if var.name_hint in self.name_to_shape:
-            print(f'Change Shape of params {var.name_hint}, {var.type_annotation.shape} to {self.name_to_shape[var.name_hint]}')
+            # print(f'Change Shape of params {var.name_hint}, {var.type_annotation.shape} to {self.name_to_shape[var.name_hint]}')
             d = self.name_to_shape[var.name_hint]
             var_new = relay.var(var.name_hint, shape=d, dtype=var.type_annotation.dtype)
             return var_new
         else:
-            print("Do nothing for other cases")
+            # print("Do nothing for other cases")
             return var
 
 class InferCallNodeType(relay.ExprMutator):
@@ -142,11 +142,11 @@ class ReWriteSwapVars(relay.ExprMutator):
 
     def visit_var(self, var):
         if var.name_hint in self.name_to_var:
-            print(f'Change Shape of params {var.name_hint}, {var.type_annotation.shape} to {self.name_to_var[var.name_hint]}')
+            # print(f'Change Shape of params {var.name_hint}, {var.type_annotation.shape} to {self.name_to_var[var.name_hint]}')
             d = self.name_to_var[var.name_hint]
             return d
         else:
-            print("Do nothing for other cases")
+            # print("Do nothing for other cases")
             return var
 
 
@@ -164,3 +164,24 @@ class Conv2DInputReplacer(relay.ExprMutator):
 
         # For other operations, continue visiting as usual
         return call
+    
+def calculate_total_output_time(input_shape, kernel_size, padding, stride, input_tile_size, input_tile_stride):
+    tile_size = input_tile_size[-2]
+    tile_stride = input_tile_stride[-1]
+
+    kernel_size = kernel_size[-1]
+    padding = padding[-1]
+    stride = stride[-2]
+
+    total_mac = 0
+
+
+    outer_out_h = (input_shape[2] + 2 * padding - tile_size) // tile_stride + 1
+    outer_out_w = (input_shape[3] + 2 * padding - kernel_size) // stride + 1
+
+    inner_out_h = (tile_size - kernel_size) // stride + 1
+    inner_out_w = 1
+
+    # out_ch = l.output_channels
+
+    return outer_out_h * outer_out_w * inner_out_h * inner_out_w

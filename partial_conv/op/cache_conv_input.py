@@ -14,7 +14,8 @@ import math
 from tvm.ir import register_intrin_lowering, Op, register_op_attr
 
 from .global_identifier import get_fusion_worker_id, get_fusion_op_num, increase_fusion_op_num
-from .macro_globalvar import invoke_c_macro, CHECK_IF_SKIP_COMPUTE, DECLEAR_EXTERN_WAIT_FOR_VAR, INSERT_STUB
+from .macro_globalvar import invoke_c_macro, CHECK_IF_SKIP_COMPUTE, DECLEAR_EXTERN_WAIT_FOR_VAR, INSERT_STUB, GOTO_STUB
+from partial_conv.utils import calculate_total_output_time
 
 
 # Define the new operator in Relay
@@ -33,10 +34,10 @@ _op.register_pattern(op_name, _op.OpPattern.ELEMWISE)
 _op.register_stateful(op_name, True)
 
 
-def cache_conv_input(data, buffer_shape, max_idx, conv_kernel_size, conv_strides, conv_padding, conv_dtype, conv_input_shape,layout="NCHW"):
+def cache_conv_input(data, buffer_shape, max_idx, conv_kernel_size, conv_strides, conv_padding, conv_dtype, conv_input_shape, input_tile_size, input_tile_stride ,layout="NCHW"):
     attrs = tvm.ir.make_node("DictAttrs", buffer_shape=buffer_shape, max_idx=max_idx, 
                              conv_kernel_size=conv_kernel_size, conv_strides=conv_strides, conv_padding=conv_padding,
-                             conv_input_shape=conv_input_shape
+                             conv_input_shape=conv_input_shape, input_tile_size=input_tile_size, input_tile_stride=input_tile_stride
                              )
     buffer_var = relay.var("cache_buffer_var", shape=buffer_shape, dtype=conv_dtype)
     current_idx = relay.var("cache_cur_idx", shape=(4,), dtype="int32") # NCHW
@@ -69,20 +70,32 @@ def _compute(attrs, inputs, output_type):
     strides = attrs["conv_strides"]
     padding = attrs["conv_padding"]
     input_shape = attrs["conv_input_shape"]
+    input_tile_size = attrs["input_tile_size"]
+    input_tile_stride = attrs["input_tile_stride"]
+
+    worker_id = get_fusion_worker_id()
+    cur_op_num = get_fusion_op_num()
+    print("worker_id:", worker_id, "op_num:", cur_op_num)
+
     
     print("kernel_size:", kernel_size)
     print("input_shape:", input_shape)
     print("padding:", padding)
     print("strides:", strides)
-    worker_id = get_fusion_worker_id()
-    cur_op_num = get_fusion_op_num()
-    print("worker_id:", worker_id, "op_num:", cur_op_num)
+    print("input_tile_size:", input_tile_size)
+    print("input_tile_stride:", input_tile_stride)
+
+    total_output_time = calculate_total_output_time(input_shape, kernel_size, padding, strides, input_tile_size, input_tile_stride)
+    print("total output_time:", total_output_time)
+
+    
 
     def gen_ib(data_buf, buffer_var_buf, current_idx_buf, out_buf):
         ib = tvm.tir.ir_builder.create()
         ib.emit(invoke_c_macro(INSERT_STUB, worker_id, cur_op_num))
         ib.emit(invoke_c_macro(DECLEAR_EXTERN_WAIT_FOR_VAR, worker_id))
         ib.emit(invoke_c_macro(CHECK_IF_SKIP_COMPUTE, worker_id, cur_op_num, cur_op_num+1))
+        
         data_w = data_buf.shape[3]
         data = ib.buffer_ptr(data_buf)
         buffer = ib.buffer_ptr(buffer_var_buf)
@@ -94,6 +107,10 @@ def _compute(attrs, inputs, output_type):
         #         with ib.for_range(0, buffer_shape[2], "j") as j:
         #             with ib.for_range(0, buffer_shape[3] - data_w, "k") as k:
         #                 buffer[n , i , j , k] = buffer[n, i , j , k + data_w]
+        if not (input_tile_size[0] == kernel_size[0] and input_tile_size[1] == kernel_size[1]):
+            with ib.if_scope(cur_idx[0] >= total_output_time):
+                ib.emit(invoke_c_macro(GOTO_STUB, worker_id, cur_op_num+1))
+
 
         # Copy new data to buffer
         with ib.for_range(0 , buffer_shape[0], "n") as n: # begin of for loop has to be zero for c codegen...
@@ -111,6 +128,7 @@ def _compute(attrs, inputs, output_type):
                     with ib.for_range(0, buffer_shape[2], "j") as j:
                         with ib.for_range(0, buffer_shape[3], "k") as k:
                             out[n , i , j , k] = buffer[n, i , j , k]
+            cur_idx[0] += 1 # used for record total output time
 
         with ib.else_scope():
             # skip output
