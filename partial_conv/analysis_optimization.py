@@ -200,7 +200,7 @@ MCUNet_320KB_ImageNet = [
     # PoolingLayer(pool_size=3, stride=1),
 ]
 
-layers = MCUNet_320KB_ImageNet
+layers = mcunetv2_vww_5fps
 
 split_idx_1 = 13
 split_idx_2 = 16
@@ -209,7 +209,7 @@ block1 = layers[0:split_idx_1]
 block2 = layers[split_idx_1:split_idx_2]
 block_remain = layers[split_idx_2:]
 # Example input tensor (adjust dimensions based on tile size)
-input_tensor = np.zeros((176, 176, 3))  # (height, width, channels)
+input_tensor = np.zeros((80, 80, 3))  # (height, width, channels)
 
 # out_block1 = fused_block1.forward_common(input_tensor)
 
@@ -295,20 +295,20 @@ print("width multiplier:", w)
 # print("fusion range:", opt_setting)
 
 # Minimaize MAC s.t. Peak MEM Optimizer
-from .analysis.memory_first import MinimizeMACstPeakMEMOptimizer
-from .analysis.utils import create_network_from
-import math
-optimizer = MinimizeMACstPeakMEMOptimizer()
-PEAK_MEM_TH = 256000
-mac_usage, opt_setting = optimizer.optimize(layers, input_tensor, PEAK_MEM_TH)
-print(f"The minimal mac s.t. {PEAK_MEM_TH} from {0} to {len(layers)} is: {mac_usage}")
-print(f"The optimal setting is: {opt_setting}")
-fusion_network = create_network_from(opt_setting, layers, input_tensor)
-fusion_network.reset_compute_counter()
-# _ = [l.set_forward_cache_horizon() for l in blocks]
-fusion_network_mem = fusion_network.calc_memory_usage(input_tensor, ignore_output=True)
-print("Fusion Network memory usage:", fusion_network_mem)
-print("fusion range:", opt_setting)
+# from .analysis.memory_first import MinimizeMACstPeakMEMOptimizer
+# from .analysis.utils import create_network_from
+# import math
+# optimizer = MinimizeMACstPeakMEMOptimizer()
+# PEAK_MEM_TH = 256000
+# mac_usage, opt_setting = optimizer.optimize(layers, input_tensor, PEAK_MEM_TH)
+# print(f"The minimal mac s.t. {PEAK_MEM_TH} from {0} to {len(layers)} is: {mac_usage}")
+# print(f"The optimal setting is: {opt_setting}")
+# fusion_network = create_network_from(opt_setting, layers, input_tensor)
+# fusion_network.reset_compute_counter()
+# # _ = [l.set_forward_cache_horizon() for l in blocks]
+# fusion_network_mem = fusion_network.calc_memory_usage(input_tensor, ignore_output=True)
+# print("Fusion Network memory usage:", fusion_network_mem)
+# print("fusion range:", opt_setting)
 
 # Minimize PEAK MEM s.t. MAC Overhead factor
 # from .analysis.memory_first import MinimizePeakMEMstMOFOptimizer
@@ -324,6 +324,21 @@ print("fusion range:", opt_setting)
 # fusion_network_mem = fusion_network.calc_memory_usage(input_tensor, ignore_output=True)
 # print("Fusion Network memory usage:", fusion_network_mem)
 # print("fusion range:", opt_setting)
+
+# MCUNet Optimizer
+
+from .analysis.memory_first import MCUNetOptimizer
+from .analysis.utils import create_network_from
+import math
+optimizer = MCUNetOptimizer()
+mem_usage, opt_setting = optimizer.optimize(layers, input_tensor)
+print(f"[MCUNetOptimizer] The minimal Peak MEM from {0} to {len(layers)} is: {mem_usage}")
+print(f"[MCUNetOptimizer]  The optimal setting is: {opt_setting}")
+fusion_network = create_network_from(opt_setting, layers, input_tensor)
+fusion_network.reset_compute_counter()
+fusion_network_mem = fusion_network.calc_memory_usage(input_tensor, ignore_output=True)
+print("Fusion Network memory usage:", fusion_network_mem)
+print("fusion range:", opt_setting)
 
 fusion_mac = fusion_network.total_mac
 common_mac = fusion_network.total_common_mac

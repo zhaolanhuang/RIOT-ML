@@ -104,7 +104,20 @@ class MinimizePeakMEMstMOFOptimizer:
         # paths = find_k_shortest_paths_under_weight_sum_threshold(fusion_mac_graph, 0, N, maximum_mac)
         return min_mem, from_path_to_fusion_setting(opt_path)
 
+class MCUNetOptimizer:
+    def __init__(self):
+        pass
 
+    def optimize(self, layers, input_tensor):
+        graph_producer = FusionCostGraphProducer(MemoryUsageEstimator)
+        fusion_mem_graph = graph_producer.create_graph(layers, input_tensor)
+        fusion_mem_graph = np.array(fusion_mem_graph)
+        N = len(layers)
+        for i in range(1, N):
+            fusion_mem_graph[i, i+2:] = np.inf
+        mem_usage, opt_path = find_minimax_path(fusion_mem_graph, 0, N)
+        print(f'Layer Num: {N}, Opt Path: {opt_path}')
+        return mem_usage, from_path_to_fusion_setting(opt_path)
         
 
 class DPOptimizer:
