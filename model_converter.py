@@ -95,7 +95,7 @@ def compile_per_ops_eval(relay_mod, params ,riot_board=None, mlf_path=None, link
         export_model_library_format(module, mlf_path)
     return module
 
-def load_model(model_path: str, shape_dict=None):
+def default_load_model(model_path: str, shape_dict=None):
     frontend = guess_frontend(model_path)
     if isinstance(frontend, PyTorchFrontend):
         if 'preserve_pytorch_scopes' in inspect.getfullargspec(relay.frontend.from_pytorch).args:
@@ -105,6 +105,15 @@ def load_model(model_path: str, shape_dict=None):
     else:
         model = tvmc.load(model_path, shape_dict=shape_dict)
     return model.mod, model.params
+
+GLOBAL_MODEL_LOADER = default_load_model
+
+def set_global_model_loader(model_loader):
+    global GLOBAL_MODEL_LOADER
+    GLOBAL_MODEL_LOADER = model_loader
+
+def load_model(model_path: str, shape_dict=None):
+    return GLOBAL_MODEL_LOADER(model_path, shape_dict)
 
 def generate_model_c_code(model_file_path, board, model_output_path, mlmci_output_path="./", shape_dict=None):
     mod, params = load_model(model_file_path, shape_dict)
