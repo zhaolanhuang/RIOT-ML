@@ -2,3 +2,6 @@
 	path = RIOT
 	url = git@github.com:zhaolanhuang/RIOT.git
 	branch = wip/utvm
+[submodule "DeepSliding"]
+	path = DeepSliding
+	url = git@github.com:zhaolanhuang/DeepSliding.git
