@@ -77,6 +77,7 @@ void per_model_eval(void)
     random_init(UTOE_RANDOM_SEED);
     uint32_t start, end;
 
+    //TODO should not randomize input for ssm
     for(int i = 0; i < UTOE_TRIAL_NUM;i++) {
 
         for(int j = mlmodel_get_num_input_vars(model_ptr); j > 0; j--) {

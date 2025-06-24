@@ -76,11 +76,14 @@ def compile_per_model_eval(relay_mod, params, riot_board=None, mlf_path=None):
                                                     "tir.disable_vectorize": True, 
                                                     "tir.usmp.enable": True, # what is usmp? -> Enable Unified Static Memory Planning
                                                     "tir.usmp.algorithm": "hill_climb",
+                                                    "relay.backend.use_auto_scheduler": True, # Keep that for Primitive Function with multiple heavy ops (like Convs), also avoid dense -> contrib dense
                                                     }): 
         print(params.keys())
         module = relay.build(relay_mod, target=TARGET, runtime=RUNTIME, params=None, executor=EXECUTOR)
     if mlf_path is not None:
         export_model_library_format(module, mlf_path)
+    mem_pool_size = [v for v in module.function_metadata['__tvm_main__'].workspace_sizes.values()][0]
+    print(f"mem pool size: {mem_pool_size}")
     return module
 
 def compile_per_ops_eval(relay_mod, params ,riot_board=None, mlf_path=None, link_params=True):
