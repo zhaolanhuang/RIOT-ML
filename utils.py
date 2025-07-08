@@ -4,7 +4,7 @@ import numpy as np
 
 def _shape_to_size(shape, dtype):
     bits_per_item = int(
-        re.match(r"((float)|(int)|(uint))(?P<width_bits>[0-9]+)", dtype).group("width_bits")
+        re.match(r"((bfloat)|(float)|(int)|(uint))(?P<width_bits>[0-9]+)", dtype).group("width_bits")
     )
     assert bits_per_item is not None, f"don't know how to compute size of type {dtype}"
     total_bits = bits_per_item

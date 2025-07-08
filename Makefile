@@ -63,6 +63,7 @@ endif
 CFLAGS += -Wno-strict-prototypes 
 # CFLAGS += -Wno-missing-include-dirs
 CFLAGS += -Wno-discarded-qualifiers
+CFLAGS += -Wno-strict-aliasing
 
 IOTLAB_ARCHI_openmote-b = openmoteb
 include iotlab.site.mk
