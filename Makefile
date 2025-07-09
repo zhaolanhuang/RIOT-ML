@@ -60,10 +60,19 @@ else
 	include $(RIOTBASE)/Makefile.include
 endif
 
+DS_SSM_MODEL ?= 0 # Evaluate a DeepSliding SSM-based Model
+
+ifeq ($(DS_SSM_MODEL), 1)
+
+CFLAGS += -DDS_SSM_MODEL
+
+endif
+
 CFLAGS += -Wno-strict-prototypes 
 # CFLAGS += -Wno-missing-include-dirs
 CFLAGS += -Wno-discarded-qualifiers
 CFLAGS += -Wno-strict-aliasing
+CFLAGS += -Wno-cast-align
 
 IOTLAB_ARCHI_openmote-b = openmoteb
 include iotlab.site.mk

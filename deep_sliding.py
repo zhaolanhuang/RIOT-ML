@@ -26,6 +26,7 @@ if __name__ == '__main__':
     parser.add_argument("--trials-num", default=10, type=int, help="defalut: 10")
     parser.add_argument("--input-shape", default=None, type=lambda s: [int(i) for i in s.split(',')], help="specify the input shape, mandatory for pytorch model. format: N,C,W,H default: None")
     os.environ['UTOE_ONLY'] = '1'
+    os.environ['DS_SSM_MODEL'] = '1'
     args = parser.parse_args()
     if args.mem_analysis:
         memory_analysis(args.model_file, args.board, {'input': args.input_shape} if args.input_shape is not None else None)

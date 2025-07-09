@@ -71,13 +71,14 @@ void per_model_eval(void)
     (void) printf("U-TOE Per-Model Evaluation \n");
 #ifdef UTOE_ONLY
     (void) printf("Press any key to start >\n");
-    (void) getchar();
+    // (void) getchar();
 #endif
 
     random_init(UTOE_RANDOM_SEED);
     uint32_t start, end;
 
-    //TODO should not randomize input for ssm
+#ifndef DS_SSM_MODEL
+
     for(int i = 0; i < UTOE_TRIAL_NUM;i++) {
 
         for(int j = mlmodel_get_num_input_vars(model_ptr); j > 0; j--) {
@@ -90,8 +91,39 @@ void per_model_eval(void)
         end =  xtimer_now_usec();
         printf("trial: %d, usec: %ld, ret: %d \n", i, (long int)(end - start), ret_val);
     }
+
+#else
+
+    for(int i = 0; i < UTOE_TRIAL_NUM;i++) {
+        
+        for(int j = mlmodel_get_num_input_vars(model_ptr); j > 0; j--) {
+            mlmodel_iovar_t *input = mlmodel_get_input_variable(model_ptr, j - 1);
+            memset(input->values, 0, input->num_bytes);
+        }
+        
+        mlmodel_iovar_t *input = mlmodel_get_input_variable(model_ptr, 0);
+
+        float *val = (float*) input->values;
+      
+        for (size_t j = 0; j < input->num_bytes / sizeof(float); j++) {
+            val[j] =  (float)rand()/(float)(RAND_MAX);
+        }
+        
+        start =  xtimer_now_usec();
+        int ret_val = -1;
+        do {
+            ret_val = mlmodel_inference(model_ptr);
+        } while (ret_val != 0);
+        end =  xtimer_now_usec();
+        printf("trial: %d, usec: %ld, ret: %d \n", i, (long int)(end - start), ret_val);
+    }
+
+#endif
+
     (void) printf("Evaluation finished >\n");
 }
+
+
 #endif
 
 #if (UTOE_GRANULARITY==1)
