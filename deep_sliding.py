@@ -1,7 +1,7 @@
 from evaluate import evaluate_per_model, evaluate_per_operator, memory_analysis
 import argparse
 import os
-from DeepSliding.tvm_pytorch_frontend import load_model
+from DeepSliding.tvm_pytorch_frontend import load_model, set_bf16
 from model_converter import set_global_model_loader
 
 if __name__ == '__main__':
@@ -25,9 +25,12 @@ if __name__ == '__main__':
     parser.add_argument("--random-seed", default=42, type=int, help="default: 42")
     parser.add_argument("--trials-num", default=10, type=int, help="defalut: 10")
     parser.add_argument("--input-shape", default=None, type=lambda s: [int(i) for i in s.split(',')], help="specify the input shape, mandatory for pytorch model. format: N,C,W,H default: None")
+    mode_group.add_argument("--bf16", help="Store hidden states in BFloat 16 scheme.",
+                            action="store_true")
     os.environ['UTOE_ONLY'] = '1'
     os.environ['DS_SSM_MODEL'] = '1'
     args = parser.parse_args()
+    set_bf16(args.bf16)
     if args.mem_analysis:
         memory_analysis(args.model_file, args.board, {'input': args.input_shape} if args.input_shape is not None else None)
     elif args.per_ops:
