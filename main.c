@@ -116,6 +116,14 @@ void per_model_eval(void)
         } while (ret_val != 0);
         end =  xtimer_now_usec();
         printf("trial: %d, usec: %ld, ret: %d \n", i, (long int)(end - start), ret_val);
+
+        start =  xtimer_now_usec();
+        ret_val = -1;
+        do {
+            ret_val = mlmodel_inference(model_ptr);
+        } while (ret_val != 0);
+        end =  xtimer_now_usec();
+        printf("second trial: %d, usec: %ld, ret: %d \n", i, (long int)(end - start), ret_val);
     }
 
 #endif
