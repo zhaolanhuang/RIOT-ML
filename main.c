@@ -71,8 +71,10 @@ void per_model_eval(void)
     (void) printf("U-TOE Per-Model Evaluation \n");
 #ifdef UTOE_ONLY
     (void) printf("Press any key to start >\n");
-    // (void) getchar();
+    (void) getchar();
 #endif
+    SCB_EnableDCache();
+    SCB_EnableICache();
 
     random_init(UTOE_RANDOM_SEED);
     uint32_t start, end;
@@ -115,7 +117,7 @@ void per_model_eval(void)
             ret_val = mlmodel_inference(model_ptr);
         } while (ret_val != 0);
         end =  xtimer_now_usec();
-        printf("trial: %d, usec: %ld, ret: %d \n", i, (long int)(end - start), ret_val);
+        printf("initial window trial: %d, usec: %ld, ret: %d \n", i, (long int)(end - start), ret_val);
 
         start =  xtimer_now_usec();
         ret_val = -1;
@@ -123,7 +125,7 @@ void per_model_eval(void)
             ret_val = mlmodel_inference(model_ptr);
         } while (ret_val != 0);
         end =  xtimer_now_usec();
-        printf("second trial: %d, usec: %ld, ret: %d \n", i, (long int)(end - start), ret_val);
+        printf("overlap window trial: %d, usec: %ld, ret: %d \n", i, (long int)(end - start), ret_val);
     }
 
 #endif

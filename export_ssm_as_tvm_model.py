@@ -15,12 +15,12 @@ from pathlib import Path
 
 
 CLS_OF_MODELS = [
-    cECG_CNN,
-    CET_S,
-    ResTCN,
+    # cECG_CNN,
+    # CET_S,
+    # ResTCN,
     TEMPONet,
-    TinyChirpTransformerTime,
-    TinyChirpCNNTime
+    # TinyChirpTransformerTime,
+    # TinyChirpCNNTime
 ]
 
 EXPORT_DIR = "./DeepSliding_TVM_model/stm32f746g-disco-bf16/"
