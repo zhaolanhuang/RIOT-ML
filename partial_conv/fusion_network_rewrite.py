@@ -74,7 +74,7 @@ class MultiStageFusionNetworkRewriter(relay.ExprMutator):
             
             elif is_fusion_end:
                 new_normal_conv = relay.nn.conv2d(*new_args, **call.attrs)
-                print("end conv_idx:", conv_idx)
+                # print("end conv_idx:", conv_idx)
                 iteratee_func, conv_chain_params, cache_vars, \
                 new_input_layout, new_input_stride, \
                 output_shape, input_shape = create_fusion_block_iteratee_with_cache(new_normal_conv, 1, f'iteratee_{conv_idx}')

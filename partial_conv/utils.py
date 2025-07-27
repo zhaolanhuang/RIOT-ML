@@ -85,12 +85,12 @@ class ReWriteInputsShape(relay.ExprMutator):
 
     def visit_var(self, var):
         if var.name_hint in self.name_to_shape:
-            print(f'Change Shape of params {var.name_hint}, {var.type_annotation.shape} to {self.name_to_shape[var.name_hint]}')
+            # print(f'Change Shape of params {var.name_hint}, {var.type_annotation.shape} to {self.name_to_shape[var.name_hint]}')
             d = self.name_to_shape[var.name_hint]
             var_new = relay.var(var.name_hint, shape=d, dtype=var.type_annotation.dtype)
             return var_new
         else:
-            print("Do nothing for other cases")
+            # print("Do nothing for other cases")
             return var
 
 class InferCallNodeType(relay.ExprMutator):
@@ -142,11 +142,11 @@ class ReWriteSwapVars(relay.ExprMutator):
 
     def visit_var(self, var):
         if var.name_hint in self.name_to_var:
-            print(f'Change Shape of params {var.name_hint}, {var.type_annotation.shape} to {self.name_to_var[var.name_hint]}')
+            # print(f'Change Shape of params {var.name_hint}, {var.type_annotation.shape} to {self.name_to_var[var.name_hint]}')
             d = self.name_to_var[var.name_hint]
             return d
         else:
-            print("Do nothing for other cases")
+            # print("Do nothing for other cases")
             return var
 
 

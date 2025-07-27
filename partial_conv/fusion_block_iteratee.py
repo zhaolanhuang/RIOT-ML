@@ -137,10 +137,10 @@ class InsertConvInputCacheAndIterPool(relay.ExprMutator):
             buffer_shape[2] = input_tile_size[0]
             buffer_shape[3] = op_info['kernel_size'][1]
 
-            print("insert conv cache:", op_info)
+            # print("insert conv cache:", op_info)
             input_to_cache = new_args[0]
             if op_info['first_conv']:
-                print("insert dyn slice for first conv node")
+                # print("insert dyn slice for first conv node")
                 slice_begin_var = relay.var("iterator", shape=(4,), dtype="int32")
                 input_to_cache = dyn_slice_fixed_size(new_args[0], slice_begin_var, [int(input_shape[0]),int(input_shape[1]), input_tile_size[0], 1])
             
@@ -171,7 +171,7 @@ class InsertConvInputCacheAndIterPool(relay.ExprMutator):
             out_ch = out_shape[1]
 
             if out_hw == (1, 1): #global pooling
-                print("insert iterative avg_pool:", op_info)
+                # print("insert iterative avg_pool:", op_info)
                 avg_input = new_args[0]
                 cache_prev_output = relay.var("cache_prev_gp_output", shape=out_shape, dtype=call.checked_type.dtype) # gp: global pooling
                 output = iterative_global_avg_pool_step(avg_input, cache_prev_output, input_shape[-2] * input_shape[-1], call.checked_type.dtype)    

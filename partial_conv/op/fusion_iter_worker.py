@@ -200,8 +200,30 @@ def fusion_iter_worker_compute(attrs, inputs, output_type):
     print("We are now at fusion_iter_worker_comp")
     clear_fusion_op_num()
     func = attrs["relay_func"]
+    cmsisnn_func = func.with_attr("global_symbol", "main")
+    mod = tvm.IRModule.from_expr(cmsisnn_func)
+    from tvm.relay.op.contrib import cmsisnn
+    cmsisnn_mod = cmsisnn.partition_for_cmsisnn(mod, mod_name=func.attrs["global_symbol"])
+    cmsisnn_main = None
     te_compiler = tvm.relay.backend.te_compiler.current()
-    te_compiler.lower(func, tvm.target.Target.current())
+    # breakpoint()
+    cmsis_func = None
+    for k in cmsisnn_mod.functions.keys():
+        if k.name_hint == "main":
+            cmsisnn_main = cmsisnn_mod[k.name_hint]
+        # else:
+        #     print("[CMSIS-NN] te lowering:", k.name_hint)
+        #     breakpoint()
+        #     cmsis_func = te_compiler.lower(cmsisnn_mod[k.name_hint], tvm.target.Target.current())
+        #     print("[CMSIS-NN] te lowering done:", k.name_hint)
+    cmsisnn_main = cmsisnn_main.with_attr("global_symbol", func.attrs["global_symbol"])
+    print("[CMSIS-NN] te lowering: cmsisnn_main", func.attrs["global_symbol"])
+    cmsis_main_lower = te_compiler.lower(cmsisnn_main, tvm.target.Target.current())
+    print("[CMSIS-NN] te lowering done: cmsisnn_main", func.attrs["global_symbol"])
+    breakpoint()
+
+    # func_lower = te_compiler.lower(func, tvm.target.Target.current())
+    
     # prim_func = tvm.relay.backend.te_compiler.lower_to_primfunc(func, tvm.target.Target.current())
     # breakpoint()
     # iterator = tvm.te.placeholder((4,), name="iterator", dtype="int32")
