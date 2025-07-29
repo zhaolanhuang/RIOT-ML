@@ -14,6 +14,8 @@ APPLICATION = U-TOE
 EXTERNAL_PKG_DIRS += models
 
 USEPKG += default 
+USEPKG += cmsis
+USEMODULE += cmsis-nn
 USEMODULE += xtimer random stdin
 
 UTOE_RANDOM_SEED ?= 42
@@ -23,6 +25,8 @@ UTOE_ONLY ?= 0
 
 CFLAGS += -DUTOE_RANDOM_SEED=$(UTOE_RANDOM_SEED) -DUTOE_TRIAL_NUM=$(UTOE_TRIAL_NUM)
 CFLAGS += -DUTOE_GRANULARITY=$(UTOE_GRANULARITY) -DCONFIG_SKIP_BOOT_MSG=1
+CFLAGS += -I$(CURDIR) -include msf_cnn_macro.h
+CFLAGS += -I$(CURDIR) -include cmsis_nn_wrapper.h
 
 INCLUDES += -I$(CURDIR)/utvm_runtime/include
 

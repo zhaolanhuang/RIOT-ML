@@ -206,11 +206,13 @@ def fusion_iter_worker_compute(attrs, inputs, output_type):
     cmsisnn_mod = cmsisnn.partition_for_cmsisnn(mod, mod_name=func.attrs["global_symbol"])
     cmsisnn_main = None
     te_compiler = tvm.relay.backend.te_compiler.current()
-    # breakpoint()
     cmsis_func = None
     for k in cmsisnn_mod.functions.keys():
         if k.name_hint == "main":
             cmsisnn_main = cmsisnn_mod[k.name_hint]
+        else:
+            from .call_cmsis import save_cmsisnn_op
+            save_cmsisnn_op(k.name_hint, cmsisnn_mod[k.name_hint])
         # else:
         #     print("[CMSIS-NN] te lowering:", k.name_hint)
         #     breakpoint()
@@ -220,7 +222,7 @@ def fusion_iter_worker_compute(attrs, inputs, output_type):
     print("[CMSIS-NN] te lowering: cmsisnn_main", func.attrs["global_symbol"])
     cmsis_main_lower = te_compiler.lower(cmsisnn_main, tvm.target.Target.current())
     print("[CMSIS-NN] te lowering done: cmsisnn_main", func.attrs["global_symbol"])
-    breakpoint()
+    
 
     # func_lower = te_compiler.lower(func, tvm.target.Target.current())
     

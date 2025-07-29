@@ -50,18 +50,57 @@ _op.register_stateful(op_name, True)
 #     # breakpoint()
 #     return relay.Call(relay.op.get("iter_func"), func_args, attrs)
 
+_GLOBAL_NAME_TO_OP = {}
+
+def save_cmsisnn_op(name, op):
+    _GLOBAL_NAME_TO_OP[name] = op
+
 dtype_bytes = {"int32" : 4, "float32" : 4}
+
+#INPUT LAYOUT: NCHW
+#FILTER LAYOUT: OIHW
+
+def is_depthwise(conv_attrs, input_shape, filter_shape):
+    return (conv_attrs.channels == filter_shape[0] * filter_shape[1])
+
 
 # Define the compute function for the my_add operator
 def wrap_call_cmsis_compute_tir(attrs, inputs, output_type):
+    func = _GLOBAL_NAME_TO_OP[attrs["global_var"].name_hint]
+    conv_op = func.body.op.body
+    conv_attrs =  conv_op.attrs
+    input_shape = conv_op.type_args[0].shape
+    filter_shape = conv_op.type_args[1].shape
+    output_shape = conv_op.checked_type.shape
+    depth_multiplier = -1
+    if is_depthwise(conv_attrs, input_shape, filter_shape):
+        kernel_pos_dm = 0 if input_shape[1] == 1 else 1
+        depth_multiplier = filter_shape[kernel_pos_dm]
+    _is_depthwise = depth_multiplier != -1
+
+    input_nhwc = [input_shape[0], input_shape[2], input_shape[3], input_shape[1]]
+    output_nhwc = [output_shape[0], output_shape[2], output_shape[3], output_shape[1]]
+    filter_ohwi = [filter_shape[0], filter_shape[2], filter_shape[3], filter_shape[1]]
+    stride = conv_attrs.strides[0]
+    padding = conv_attrs.padding[0]
+    dilation = conv_attrs.dilation[1]
+    
     def _call_cmsis_compute_tir(ins, outs):
         ins_data = [i.data for i in ins]
         ext_name = attrs["global_var"].name_hint
         ib = tvm.tir.ir_builder.create()
-
-        ib.emit(tvm.tir.call_intrin("int32", 
-            "tir.arm_convolve_wrapper_s8_",
-                *ins_data, outs[0].data))
+        if(_is_depthwise):
+            ib.emit(tvm.tir.call_intrin("int32", 
+                "tir.arm_depthwise_conv_wrapper_s8_",
+                    *ins_data, outs[0].data, *input_nhwc, *filter_ohwi, *output_nhwc,
+                    stride, padding, dilation, depth_multiplier
+                    ))
+        else:
+            ib.emit(tvm.tir.call_intrin("int32", 
+                "tir.arm_convolve_wrapper_s8_",
+                    *ins_data, outs[0].data, *input_nhwc, *filter_ohwi, *output_nhwc,
+                    stride, padding, dilation
+                    ))
         return ib.get()
     
     return _call_cmsis_compute_tir
